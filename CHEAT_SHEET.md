@@ -220,9 +220,15 @@ git log --oneline -10
 ## 📁 FONTOS FÁJLOK
 
 ### Főbb HTML fájlok
-- `index-configurable.html` - **Fő alkalmazás** (multi-env)
-- `index.html` - CDN verzió (legacy)
+- `index-configurable.html` - **🌟 Fő alkalmazás** (40 sor, modular, multi-env)
+- `index-minimal.html` - **ÚJ!** Minimális példa (jól kommentált)
+- `index.html` - CDN verzió (legacy, monolithic)
 - `index-demo.html` - Demo verzió (CSS animáció)
+
+### Splash Screen Modulok (v2.0 - ÚJ!)
+- `splash-screen.css` - Splash stílusok (1.4 KB)
+- `splash-screen.js` - Splash logika (3.7 KB)
+- `ui5-bootstrap.js` - Dinamikus UI5 betöltés (1.9 KB)
 
 ### Konfiguráció
 - `config.js` - Környezeti beállítások (CDN/Local/Backend URL-ek)
@@ -238,9 +244,11 @@ git log --oneline -10
 - `README.md` - Használati útmutató
 - `KONZEPCIÓ.md` - Architektúra (432 sor)
 - `FEJLESZTOI_UTASITAS.md` - Integráció
+- `INTEGRATION_PLAN.md` - WMS integrációs terv
+- `REFACTORING_NOTES.md` - **ÚJ!** v2.0 refactoring részletek
 - `SESSION_HANDOFF.md` - Session handoff
 - `RUNBOOK.md` - Működési útmutató
-- `GIT_CHEAT_SHEET.md` - Ez a fájl
+- `CHEAT_SHEET.md` - Ez a fájl
 
 ---
 

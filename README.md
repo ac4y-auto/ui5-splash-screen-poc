@@ -4,13 +4,14 @@ UI5 alkalmazás splash screen-nel, amely webm videót játszik le a betöltés a
 
 ## 🎯 Funkciók
 
-- ✅ **Splash Screen** videóval (5x lassított lejátszás, 2 perc időtartam)
+- ✅ **Splash Screen** videóval (5x lassított lejátszás, automatikus eltűnés)
 - ✅ **3 Környezeti Konfiguráció**: CDN, Local (node_modules), Backend (192.168.1.10:9000)
 - ✅ **Dinamikus UI5 betöltés** környezet alapján
 - ✅ **NPM scriptek** különböző módokhoz
-- ✅ **Poster kép** támogatás
+- ✅ **Poster kép** támogatás (100% képernyő)
 - ✅ **Smooth fade-out** átmenet
 - ✅ **Responsive** design
+- ✅ **Modular Architecture** - Külső CSS/JS fájlok (v2.0)
 
 ## 🚀 Gyors Kezdés
 
@@ -36,11 +37,17 @@ npm run start:backend
 ## 📁 Fájlok
 
 ### Fő Fájlok
-- `index.html` - Eredeti CDN verzió (kompatibilitás)
-- `index-configurable.html` - **ÚJ!** Konfigurálható verzió (ajánlott)
+- `index-configurable.html` - **🌟 Ajánlott!** Konfigurálható verzió (40 sor, modular)
+- `index-minimal.html` - **ÚJ!** Minimális példa (clean, jól kommentált)
+- `index.html` - Eredeti CDN verzió (kompatibilitás, legacy)
 - `index-demo.html` - Demo verzió (CSS animációval)
 - `config.js` - Környezeti konfiguráció
 - `package.json` - NPM scriptek
+
+### Splash Screen Modulok (v2.0)
+- `splash-screen.css` - Splash screen stílusok
+- `splash-screen.js` - Splash screen logika
+- `ui5-bootstrap.js` - Dinamikus UI5 betöltés
 
 ### UI5 Komponensek
 - `Component.js` - UI5 Component
@@ -54,8 +61,11 @@ npm run start:backend
 
 ### Dokumentáció
 - `README.md` - Ez a fájl
-- `KONZEPCIÓ.md` - **ÚJ!** Részletes koncepció és architektúra
+- `KONZEPCIÓ.md` - Részletes koncepció és architektúra
 - `FEJLESZTOI_UTASITAS.md` - Fejlesztői útmutató
+- `INTEGRATION_PLAN.md` - WMS integrációs terv
+- `REFACTORING_NOTES.md` - **ÚJ!** v2.0 refactoring részletek
+- `CHEAT_SHEET.md` - Gyors referencia
 
 ## 🎬 Splash Screen Funkciók
 

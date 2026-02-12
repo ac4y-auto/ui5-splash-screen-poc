@@ -3,33 +3,32 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UI5 Splash Screen - Configurable</title>
+    <title>UI5 Splash Screen - Minimal Example</title>
 
-    <!-- Configuration Script -->
+    <!-- Step 1: Load configuration -->
     <script src="config.js"></script>
 
-    <!-- Splash Screen Styles -->
+    <!-- Step 2: Load splash screen styles -->
     <link rel="stylesheet" href="splash-screen.css">
 </head>
 <body class="sapUiBody loading">
-    <!-- Environment Badge -->
+    <!-- Optional: Environment badge -->
     <div id="env-badge"></div>
 
-    <!-- Splash Screen -->
+    <!-- Step 3: Splash screen markup -->
     <div id="splash-screen">
         <video id="splash-video" autoplay loop muted playsinline poster="splash-poster.jpeg">
             <source src="splash-video.mp4" type="video/mp4">
-            Your browser does not support the video tag.
         </video>
     </div>
 
-    <!-- UI5 Bootstrap (Dynamic) -->
+    <!-- Step 4: Load UI5 bootstrap (dynamic) -->
     <script src="ui5-bootstrap.js"></script>
 
-    <!-- Splash Screen Logic -->
+    <!-- Step 5: Load splash screen logic -->
     <script src="splash-screen.js"></script>
 
-    <!-- Main Content -->
+    <!-- Your UI5 app content -->
     <div id="content"
          data-sap-ui-component
          data-name="myapp"
