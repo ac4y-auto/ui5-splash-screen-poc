@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI5 Splash Screen - Configurable</title>
+
+    <!-- Configuration Script -->
+    <script src="config.js"></script>
+
+    <style>
+        /* Splash Screen Styles */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #splash-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #splash-video {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            margin: auto;
+        }
+
+        /* Environment Badge */
+        #env-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 10000;
+            display: none;
+        }
+
+        #env-badge.show {
+            display: block;
+        }
+
+        /* Hide body content until loaded */
+        body.loading #content {
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body class="sapUiBody loading">
+    <!-- Environment Badge -->
+    <div id="env-badge"></div>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <video id="splash-video" autoplay loop muted playsinline poster="splash-poster.jpeg">
+            <source src="splash-video.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        // Video playback speed setup
+        document.addEventListener('DOMContentLoaded', function() {
+            var video = document.getElementById('splash-video');
+            video.playbackRate = 0.2;
+        });
+    </script>
+
+    <!-- Dynamic UI5 Bootstrap -->
+    <script>
+        (function() {
+            // Get current environment
+            var env = getCurrentEnv();
+            var config = UI5_CONFIGS[env];
+
+            // Show environment badge
+            var badge = document.getElementById('env-badge');
+            badge.textContent = 'UI5 ENV: ' + config.name;
+            badge.classList.add('show');
+            setTimeout(function() {
+                badge.classList.remove('show');
+            }, 3000);
+
+            // Log configuration
+            console.log('UI5 Environment:', config.name);
+            console.log('UI5 Bootstrap URL:', config.url);
+
+            // Create and inject UI5 bootstrap script
+            var script = document.createElement('script');
+            script.id = 'sap-ui-bootstrap';
+            script.src = config.url;
+            script.setAttribute('data-sap-ui-theme', 'sap_horizon');
+            script.setAttribute('data-sap-ui-libs', 'sap.m');
+            script.setAttribute('data-sap-ui-compatVersion', 'edge');
+            script.setAttribute('data-sap-ui-async', 'true');
+            script.setAttribute('data-sap-ui-onInit', 'module:sap/ui/core/ComponentSupport');
+            script.setAttribute('data-sap-ui-resourceroots', JSON.stringify({
+                "myapp": "./"
+            }));
+
+            // Handle script load error
+            script.onerror = function() {
+                console.error('Failed to load UI5 from:', config.url);
+                alert('Failed to load UI5 from ' + config.name + '. Please check the configuration.');
+            };
+
+            // Inject script
+            document.head.appendChild(script);
+
+            // Setup splash screen removal after UI5 loads
+            script.onload = function() {
+                if (typeof sap !== 'undefined' && sap.ui && sap.ui.getCore) {
+                    sap.ui.getCore().attachInit(function() {
+                        console.log("UI5 Core ready - hiding splash screen");
+                        setTimeout(function() {
+                            document.body.classList.remove('loading');
+                            var splashScreen = document.getElementById('splash-screen');
+                            splashScreen.classList.add('fade-out');
+
+                            setTimeout(function() {
+                                splashScreen.remove();
+                                console.log("Splash screen removed");
+                            }, 1000);
+                        }, 120000); // 2 minutes
+                    });
+                }
+            };
+        })();
+    </script>
+
+    <!-- Main Content -->
+    <div id="content"
+         data-sap-ui-component
+         data-name="myapp"
+         data-id="container"
+         data-settings='{"id" : "myapp"}'>
+    </div>
+</body>
+</html>

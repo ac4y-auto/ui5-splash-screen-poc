@@ -1,0 +1,25 @@
+{
+  "name": "ui5-splash-screen-poc",
+  "version": "1.0.0",
+  "description": "UI5 Splash Screen POC with multiple environment configurations",
+  "scripts": {
+    "start": "npm run start:cdn",
+    "start:cdn": "cross-env UI5_ENV=cdn npm run serve",
+    "start:local": "cross-env UI5_ENV=local npm run serve",
+    "start:backend": "cross-env UI5_ENV=backend npm run serve",
+    "serve": "http-server -p 8300 --cors -o /index.html",
+    "build": "node build.js"
+  },
+  "keywords": [
+    "ui5",
+    "splash-screen",
+    "openui5",
+    "sap"
+  ],
+  "author": "ac4y",
+  "license": "MIT",
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "http-server": "^14.1.1"
+  }
+}
