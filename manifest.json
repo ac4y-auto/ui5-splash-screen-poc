@@ -1,0 +1,42 @@
+{
+  "_version": "1.58.0",
+  "sap.app": {
+    "id": "myapp",
+    "type": "application",
+    "title": "My UI5 Application",
+    "description": "UI5 Application with Splash Screen",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "rootView": {
+      "viewName": "myapp.view.App",
+      "type": "XML",
+      "id": "app"
+    },
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": {
+        "sap.ui.core": {},
+        "sap.m": {}
+      }
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "myapp.i18n.i18n"
+        }
+      }
+    }
+  }
+}

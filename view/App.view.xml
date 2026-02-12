@@ -1,0 +1,30 @@
+<mvc:View
+    controllerName="myapp.controller.App"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    displayBlock="true">
+    <App id="app">
+        <Page
+            title="UI5 Splash Screen Demo"
+            showNavButton="false">
+            <content>
+                <VBox
+                    alignItems="Center"
+                    justifyContent="Center"
+                    class="sapUiSmallMargin">
+                    <Title
+                        text="{/message}"
+                        level="H1"
+                        class="sapUiMediumMarginBottom" />
+                    <Text
+                        text="Az alkalmazás sikeresen betöltődött a splash screen után."
+                        class="sapUiSmallMarginBottom" />
+                    <Button
+                        text="Teszt Gomb"
+                        press="onPress"
+                        type="Emphasized" />
+                </VBox>
+            </content>
+        </Page>
+    </App>
+</mvc:View>
