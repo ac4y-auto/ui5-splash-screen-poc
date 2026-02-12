@@ -1,14 +1,14 @@
 // UI5 Environment Configuration
 const UI5_CONFIGS = {
     cdn: {
-        name: 'CDN (OpenUI5 SDK)',
+        name: 'CDN (OpenUI5 Latest)',
         url: 'https://sdk.openui5.org/resources/sap-ui-core.js',
-        description: 'Uses OpenUI5 from official CDN'
+        description: 'Uses latest OpenUI5 from CDN (no version pinning available)'
     },
     local: {
         name: 'Local (node_modules)',
-        url: './node_modules/@openui5/sap.ui.core/resources/sap-ui-core.js',
-        description: 'Uses locally installed OpenUI5 from node_modules'
+        url: './node_modules/@openui5/sap.ui.core/src/sap-ui-core.js',
+        description: 'Uses locally installed OpenUI5 from node_modules (UI5 CLI serves built libraries)'
     },
     backend: {
         name: 'Backend Server',

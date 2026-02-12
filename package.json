@@ -19,7 +19,12 @@
   "author": "ac4y",
   "license": "MIT",
   "devDependencies": {
+    "@openui5/sap.m": "^1.105.0",
+    "@openui5/sap.ui.core": "^1.105.0",
+    "@openui5/themelib_sap_horizon": "^1.105.0",
+    "@ui5/cli": "^4.0.43",
     "cross-env": "^7.0.3",
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "ui5-middleware-simpleproxy": "^3.6.2"
   }
 }
