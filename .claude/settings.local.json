@@ -19,7 +19,14 @@
       "Bash(git remote add:*)",
       "Bash(git branch:*)",
       "Bash(git push:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Bash(npm run start:cdn:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /PID 5964 /F\")",
+      "Bash(start http://localhost:8300/index-configurable.html?env=cdn)",
+      "Bash(start http://localhost:8300/index-configurable.html?env=backend)",
+      "Bash(npm start)"
     ]
   }
 }
