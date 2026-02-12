@@ -1,0 +1,154 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    UI5 SPLASH SCREEN POC - ARCHITECTURE v2.0                  ║
+║                           Modular External Files                              ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          index-configurable.html                            │
+│                               (40 lines)                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        │                           │                           │
+        ▼                           ▼                           ▼
+┌───────────────┐          ┌──────────────────┐       ┌──────────────────┐
+│  config.js    │          │ splash-screen.css│       │ ui5-bootstrap.js │
+│               │          │                  │       │                  │
+│ - Environment │          │ - Container      │       │ - Env detection  │
+│   detection   │          │ - Video styles   │       │ - Script inject  │
+│ - UI5 URLs    │          │ - Fade animation │       │ - Attributes     │
+│ - getCurrentE │          │ - Badge styles   │       │ - Error handling │
+└───────────────┘          └──────────────────┘       └──────────────────┘
+                                                               │
+                                                               ▼
+                                                       ┌──────────────────┐
+                                                       │ splash-screen.js │
+                                                       │                  │
+                                                       │ - Video control  │
+                                                       │ - Hide/Show API  │
+                                                       │ - UI5 polling    │
+                                                       │ - Timeout        │
+                                                       └──────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                              FILE BREAKDOWN                                   ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  File                      │  Size    │  Lines  │  Purpose                    ║
+╟────────────────────────────┼──────────┼─────────┼─────────────────────────────╢
+║  index-configurable.html   │  1.1 KB  │   40    │  Structure (HTML markup)   ║
+║  splash-screen.css         │  1.4 KB  │   67    │  Presentation (styles)     ║
+║  splash-screen.js          │  3.7 KB  │  114    │  Behavior (splash logic)   ║
+║  ui5-bootstrap.js          │  1.9 KB  │   52    │  UI5 dynamic loading       ║
+║  config.js                 │  1.4 KB  │   49    │  Environment config        ║
+╟────────────────────────────┼──────────┼─────────┼─────────────────────────────╢
+║  TOTAL (external)          │  ~8 KB   │  282    │  Modular, cacheable        ║
+╚════════════════════════════╧══════════╧═════════╧═════════════════════════════╝
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                           INTEGRATION (3 STEPS)                               ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  Step 1 - HEAD:                                                               ║
+║  ┌─────────────────────────────────────────────────────────────────────┐     ║
+║  │ <script src="config.js"></script>                                   │     ║
+║  │ <link rel="stylesheet" href="splash-screen.css">                    │     ║
+║  └─────────────────────────────────────────────────────────────────────┘     ║
+║                                                                               ║
+║  Step 2 - BODY (markup):                                                      ║
+║  ┌─────────────────────────────────────────────────────────────────────┐     ║
+║  │ <div id="splash-screen">                                            │     ║
+║  │   <video id="splash-video" autoplay loop muted playsinline ...>     │     ║
+║  │ </div>                                                               │     ║
+║  └─────────────────────────────────────────────────────────────────────┘     ║
+║                                                                               ║
+║  Step 3 - BODY (scripts):                                                     ║
+║  ┌─────────────────────────────────────────────────────────────────────┐     ║
+║  │ <script src="ui5-bootstrap.js"></script>                            │     ║
+║  │ <script src="splash-screen.js"></script>                            │     ║
+║  └─────────────────────────────────────────────────────────────────────┘     ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                            BENEFITS vs v1.0                                   ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  Metric                    │  v1.0 (Monolithic) │  v2.0 (Modular)            ║
+╟────────────────────────────┼────────────────────┼────────────────────────────╢
+║  HTML file size            │  ~5 KB (~155 lines)│  1.1 KB (40 lines) ✅      ║
+║  Separation of concerns    │  ❌ Mixed          │  ✅ Clean                  ║
+║  Browser caching           │  ❌ All-or-nothing │  ✅ CSS/JS cached          ║
+║  Maintainability           │  ⭐⭐            │  ⭐⭐⭐⭐⭐          ║
+║  Reusability               │  ⭐⭐            │  ⭐⭐⭐⭐⭐          ║
+║  Integration complexity    │  Copy 155 lines    │  3 files + 5 lines         ║
+║  Code duplication          │  High              │  Zero                      ║
+║  Global API                │  ❌ None           │  ✅ SplashScreen object    ║
+╚════════════════════════════╧════════════════════╧════════════════════════════╝
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                         GLOBAL API (JavaScript)                               ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║                                                                               ║
+║  window.SplashScreen = {                                                      ║
+║                                                                               ║
+║    // Hide splash screen with optional delay                                 ║
+║    hide: function(delay) {                                                    ║
+║      // delay: milliseconds (default: 500)                                    ║
+║      // Example: SplashScreen.hide(1000);                                     ║
+║    },                                                                         ║
+║                                                                               ║
+║    // Show splash screen (re-display)                                         ║
+║    show: function() {                                                         ║
+║      // Example: SplashScreen.show();                                         ║
+║    }                                                                          ║
+║                                                                               ║
+║  }                                                                            ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           EXECUTION FLOW                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. Browser loads index-configurable.html
+   │
+   ├─> Loads config.js (environment configuration)
+   ├─> Loads splash-screen.css (styles injected to <head>)
+   │
+2. HTML parsing
+   │
+   ├─> Splash screen <div> rendered (black screen + video)
+   ├─> Video starts playing (autoplay, muted, loop, playbackRate: 0.2)
+   │
+3. ui5-bootstrap.js executes
+   │
+   ├─> Detects environment (URL param, localStorage, or default)
+   ├─> Creates <script id="sap-ui-bootstrap"> dynamically
+   ├─> Injects to <head> with proper attributes
+   ├─> Shows environment badge (3s)
+   │
+4. splash-screen.js executes
+   │
+   ├─> Sets video.playbackRate = 0.2
+   ├─> Polls for UI5 Core (every 100ms)
+   ├─> Waits for sap.ui.getCore().attachInit()
+   │
+5. UI5 Core initialized
+   │
+   ├─> splash-screen.js triggers hideSplashScreen(500)
+   ├─> 500ms delay → Adds "fade-out" class
+   ├─> 1s CSS transition → opacity: 0
+   ├─> Removes <div> from DOM
+   │
+6. UI5 App ready ✅
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                              VERSION HISTORY                                  ║
+╠═══════════════════════════════════════════════════════════════════════════════╣
+║  v1.0  │  Monolithic inline HTML/CSS/JS                                       ║
+║  v2.0  │  Modular external files architecture (current) ✨                    ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+Created: 2026-02-12
+Author: Claude Sonnet 4.5
+License: MIT
+Repository: https://github.com/ac4y-auto/ui5-splash-screen-poc
