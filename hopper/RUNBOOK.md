@@ -1,26 +1,27 @@
-# 📘 RUNBOOK - UI5 Splash Screen POC
+# RUNBOOK - UI5 Splash Screen POC
 
 **Projekt**: UI5 Splash Screen POC
-**Lokáció**: `C:\work\ui5\ui5-splash-screen-poc`
+**Lokacio**: `/Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc`
 **Port**: 8300
-**Létrehozva**: 2026-02-12
+**Letrehozva**: 2026-02-12
+**Frissitve**: 2026-02-15
 
 ---
 
-## 🎯 KRITIKUS SZABÁLYOK
+## KRITIKUS SZABALYOK
 
-### 0. **Kezelési Attitűd & Session Debrief** 📋
+### 0. **Kezelesi Attitud & Session Debrief**
 
-**MINDEN session végén kötelező DEBRIEF írása!**
+**MINDEN session vegen kotelezo DEBRIEF irasa!**
 
-#### Session Debrief Célja
+#### Session Debrief Celja
 
-A debrief dokumentum célja, hogy **rögzítse** a következőket:
-- ✅ Mi készült el (funkciók, fájlok, javítások)
-- ✅ Milyen problémák merültek fel (bugs, technikai akadályok)
-- ✅ Milyen döntések születtek (jó vs rossz döntések)
-- ✅ Milyen tanulságok vonhatók le (technikai, workflow)
-- ✅ Mi a következő lépés (TODO lista következő session-hez)
+A debrief dokumentum celja, hogy **rogzitse** a kovetkezoket:
+- Mi keszult el (funkciok, fajlok, javitasok)
+- Milyen problemak merultek fel (bugs, technikai akadalyok)
+- Milyen dontesek szulettek (jo vs rossz dontesek)
+- Milyen tanulsagok vonhatok le (technikai, workflow)
+- Mi a kovetkezo lepes (TODO lista kovetkezo session-hez)
 
 #### Debrief Helye
 
@@ -28,326 +29,358 @@ A debrief dokumentum célja, hogy **rögzítse** a következőket:
 hopper/DEBRIEF_v{VERSION}.md
 ```
 
-**Példa**:
+**Pelda**:
 - `hopper/DEBRIEF_v3.1.md` - v3.1 session debrief
 - `hopper/DEBRIEF_v3.2.md` - v3.2 session debrief
 
-#### Debrief Struktúra (Template)
+#### Debrief Struktura (Template)
 
 ```markdown
-# 📝 DEBRIEF - Session v{VERSION}
+# DEBRIEF - Session v{VERSION}
 
-**Dátum**: YYYY-MM-DD
-**Verzió**: X.Y.Z
-**Session hossz**: ~X óra
-**Főbb fejlesztések**: Feature 1, Feature 2
+**Datum**: YYYY-MM-DD
+**Verzio**: X.Y.Z
+**Session hossz**: ~X ora
+**Fobb fejlesztesek**: Feature 1, Feature 2
 
 ---
 
-## 🎯 Session Célkitűzések
-- [ ] Cél 1
-- [ ] Cél 2
+## Session Celkituzesek
+- [ ] Cel 1
+- [ ] Cel 2
 
-## 🚀 Elkészült Funkciók
+## Elkeszult Funkciok
 ### 1. Feature Name
-- **Probléma**: ...
-- **Megoldás**: ...
-- **Előnyök**: ...
-- **Hátrányok**: ...
+- **Problema**: ...
+- **Megoldas**: ...
+- **Elonyok**: ...
+- **Hatranyok**: ...
 
-## 🐛 Felderített Problémák & Megoldások
+## Felderitett Problemak & Megoldasok
 ### 1. Bug Name
-- **Tünet**: ...
-- **Gyökér ok**: ...
+- **Tunet**: ...
+- **Gyoker ok**: ...
 - **Fix**: ...
 
-## 💡 Jó Döntések
-### 1. Döntés
-- **Indoklás**: ...
-- **Visszajelzés**: ...
+## Jo Dontesek
+### 1. Dontes
+- **Indoklas**: ...
+- **Visszajelzes**: ...
 
-## ❌ Rossz Döntések
-### 1. Döntés
-- **Probléma**: ...
-- **Tanulság**: ...
+## Rossz Dontesek
+### 1. Dontes
+- **Problema**: ...
+- **Tanulsag**: ...
 
-## 🎓 Tanulságok
-- Technikai tanulságok
-- Workflow tanulságok
+## Tanulsagok
+- Technikai tanulsagok
+- Workflow tanulsagok
 
-## 🔮 Továbbfejlesztési Ötletek
-- Rövid távú
-- Középtávú
-- Hosszú távú
+## Tovabbfejlesztesi Otletek
+- Rovid tavu
+- Kozeptavu
+- Hosszu tavu
 
-## 🎯 Következő Session Fókusz
+## Kovetkezo Session Fokusz
 - Must Have
 - Nice to Have
 ```
 
-#### Mikor Írj Debrief-et?
+#### Mikor Irj Debrief-et?
 
-**Session vége előtt 15-30 perccel!**
+**Session vege elott 15-30 perccel!**
 
-- ✅ Minden feature elkészült után
-- ✅ Minden commit előtt
-- ✅ Session lezárás előtt
-- ✅ Context váltás előtt (ha más projektre ugranál)
+- Minden feature elkeszult utan
+- Minden commit elott
+- Session lezaras elott
+- Context valtas elott (ha mas projektre ugranal)
 
 #### Debrief Best Practices
 
-1. **Őszinteség**: Rossz döntések is benne vannak!
-2. **Részletesség**: Code snippet-ek, hibakeresési lépések
-3. **Tanulságok**: Mit csinálnál másképp legközelebb?
-4. **Linkek**: Kapcsolódó dokumentumok cross-reference
-5. **Metrikák**: LOC, fájlok száma, session hossz
+1. **Oszinteseg**: Rossz dontesek is benne vannak!
+2. **Reszletesseg**: Code snippet-ek, hibakeresesi lepesek
+3. **Tanulsagok**: Mit csinalnal maskeppe legkozelebb?
+4. **Linkek**: Kapcsolodo dokumentumok cross-reference
+5. **Metrikak**: LOC, fajlok szama, session hossz
 
-#### Debrief Használata
+#### Debrief Hasznalata
 
-**Következő session-nél**:
-1. Olvasd el az előző debrief-et
-2. Nézd meg a "Következő Session Fókusz" részt
+**Kovetkezo session-nel**:
+1. Olvasd el az elozo debrief-et
+2. Nezd meg a "Kovetkezo Session Fokusz" reszt
 3. Folytasd ott, ahol abbahagytad
 
-**Code review-nál**:
-- Rossz döntések review fókuszpontok
-- Tanulságok alapján refactor
+**Code review-nal**:
+- Rossz dontesek review fokuszpontok
+- Tanulsagok alapjan refactor
 
-**Onboarding-nál**:
-- Új fejlesztők látják a decision-making folyamatot
-- Tanulságok átadása
+**Onboarding-nal**:
+- Uj fejlesztok latjak a decision-making folyamatot
+- Tanulsagok atadasa
 
 ---
 
-### Kezelési Attitűd Szabályok
+### Kezelesi Attitud Szabalyok
 
-**Claude munkastílus a projektben:**
+**Claude munkastilus a projektben:**
 
-1. **Proaktív Tesztelés** 🧪
-   - Minden új feature-t böngészőben tesztelj
-   - Screenshot-ok, console ellenőrzés
-   - Csak működő kódot mutass be a usernek
+1. **Proaktiv Teszteles**
+   - Minden uj feature-t bongeszobe tesztelj
+   - Screenshot-ok, console ellenorzes
+   - Csak mukodo kodot mutass be a usernek
 
-2. **Dokumentáció Karbantartás** 📚
-   - Minden változás → dokumentáció frissítés
-   - Cross-reference linkek naprakészen
-   - README.md mindig aktuális
+2. **Dokumentacio Karbantartas**
+   - Minden valtozas -> dokumentacio frissites
+   - Cross-reference linkek naprakeszen
+   - README.md mindig aktualis
 
-3. **Git Workflow** 🔀
-   - Csak működő kód commit-olása
+3. **Git Workflow**
+   - Csak mukodo kod commit-olasa
    - Descriptive commit messages
-   - Tag-elés minden release-nél
+   - Tag-eles minden release-nel
 
-4. **Engedélyek Kezelése** 🔐
-   - Új Bash parancs → settings.local.json update
-   - RUNBOOK.md frissítés
-   - Átláthatóság
+4. **Engedelyek Kezelese**
+   - Uj Bash parancs -> settings.local.json update
+   - RUNBOOK.md frissites
+   - Atlathatosag
 
-5. **Debrief Írás** 📝
-   - Session vége előtt 15-30 perccel
-   - Őszinte visszajelzés (jó + rossz döntések)
-   - Következő session fókusz
+5. **Debrief Iras**
+   - Session vege elott 15-30 perccel
+   - Oszinte visszajelzes (jo + rossz dontesek)
+   - Kovetkezo session fokusz
 
-6. **TODO Tracking** ✅
-   - TodoWrite tool használata multi-step taskoknál
-   - Status frissítés real-time
+6. **TODO Tracking**
+   - TodoWrite tool hasznalata multi-step taskoknal
+   - Status frissites real-time
    - Cleanup ha stale
 
 ---
 
-### 1. **UI5 Library Használat** 🚨
+### 1. **UI5 Library Hasznalat** -- KIZAROLAG SAPUI5!
 
-**⚠️ KIZÁRÓLAG SAPUI5 HASZNÁLHATÓ! OpenUI5 TILOS! ⚠️**
+**KIZAROLAG SAPUI5 HASZNALHATO! OpenUI5 TILOS!**
 
-- ✅ **SAPUI5** - Hivatalos SAP UI5 library (licencelt, támogatott)
-- ❌ **OpenUI5** - **TILOS** használni (nyílt forráskódú, nem támogatott ebben a projektben)
+- SAPUI5 - Hivatalos SAP UI5 library (licencelt, tamogatott)
+- OpenUI5 - **TILOS** hasznalni (nyilt forraskodu, nem tamogatott ebben a projektben)
 
-**Helyes CDN URL:**
-```javascript
-// ✅ HELYES - SAPUI5
-cdn: {
-    name: 'CDN (SAPUI5 Latest)',
-    url: 'https://sapui5.hana.ondemand.com/resources/sap-ui-core.js',
-    description: 'Uses SAPUI5 latest version from official SAP CDN'
-}
+**Helyes CDN URL (fiori-tools-proxy konfiguracio):**
+```yaml
+# ui5-cdn.yaml vagy ui5-backend.yaml
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      configuration:
+        ui5:
+          url: https://sapui5.hana.ondemand.com   # HELYES - SAPUI5
+          version: "1.105.0"
 
-// ❌ TILOS - OpenUI5
-cdn: {
-    url: 'https://sdk.openui5.org/resources/sap-ui-core.js'  // NE használd!
-}
+# TILOS:
+#         url: https://sdk.openui5.org             # NE hasznald!
 ```
 
-**Ellenőrzési parancsok:**
+**Helyes index.html bootstrap:**
+```html
+<!-- Statikus src - fiori run / fiori-tools-proxy szolgalja ki -->
+<script id="sap-ui-bootstrap"
+    src="resources/sap-ui-core.js"
+    ...>
+</script>
+```
+
+**Ellenorzesi parancsok:**
 ```bash
-# config.js ellenőrzés (SAPUI5-nek kell lennie)
-grep "sapui5.hana.ondemand.com" config.js
-# Várható output: url: 'https://sapui5.hana.ondemand.com/resources/sap-ui-core.js',
+# YAML konfigok ellenorzese (SAPUI5-nek kell lennie)
+grep "sapui5.hana.ondemand.com" ui5-cdn.yaml ui5-backend.yaml
+# Varhato output: url: https://sapui5.hana.ondemand.com (mindket fajlban)
 
-# OpenUI5 ellenőrzés (ÜRESNEK kell lennie!)
-grep -i "openui5" config.js
-# Várható output: (üres) - ha van találat, AZONNAL javítsd!
+# OpenUI5 ellenorzes (URESNEK kell lennie!)
+grep -ri "openui5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml index.html
+# Varhato output: (ures) - ha van talalat, AZONNAL javitsd!
+
+# Framework nev ellenorzes a YAML-okban
+grep "name: SAPUI5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml
+# Varhato output: mindharom fajlban "name: SAPUI5"
 ```
 
-**Ha OpenUI5-öt találsz:**
-1. AZONNAL javítsd a `config.js`-t SAPUI5-re
-2. Futtasd: `node build.js cdn`
-3. Indítsd újra a szervert
+**Ha OpenUI5-ot talalsz:**
+1. AZONNAL javitsd a megfelelo YAML fajlt SAPUI5-re
+2. Inditsd ujra a szervert: `npm start`
 
-### 1. **Tesztelési Protokoll** ⚠️
+### 2. **Tesztelesi Protokoll**
 
-**MINDIG Claude tesztel először böngészőben, CSAK UTÁNA szól a usernek!**
+**MINDIG Claude tesztel eloszor bongeszobe, CSAK UTANA szol a usernek!**
 
-#### Lépések:
-1. ✅ Claude megnyitja a böngészőt
-2. ✅ Claude navigál a megfelelő URL-re
-3. ✅ Claude ellenőrzi a funkciót (screenshot, console, network)
-4. ✅ Claude elemzi az eredményt
-5. ✅ **CSAK EZUTÁN** szól a usernek, hogy nézzen rá
+#### Lepesek:
+1. Claude megnyitja a bongeszot
+2. Claude naviga a megfelelo URL-re
+3. Claude ellenorzi a funkciot (screenshot, console, network)
+4. Claude elemzi az eredmenyt
+5. **CSAK EZUTAN** szol a usernek, hogy nezzek ra
 
-#### Miért?
-- User időt spórol
-- Claude előre észleli a problémákat
-- Csak működő funkciókat mutatunk be
+#### Miert?
+- User idot sporol
+- Claude elore eszleli a problemakat
+- Csak mukodo funkciokat mutatunk be
 
-### 2. **Engedélyek Kezelése** 🔐
+### 3. **Engedelyek Kezelese**
 
-**Minden új Bash parancs előtt ellenőrizd a `.claude/settings.local.json` fájlt!**
+**Minden uj Bash parancs elott ellenorizd a `.claude/settings.local.json` fajlt!**
 
-#### Lépések:
-1. ✅ Ha a parancs NEM szerepel a `permissions.allow` listában:
-   - Futtasd a parancsot (user jóváhagyja)
-   - Azonnal add hozzá a `.claude/settings.local.json`-hoz
-   - Frissítsd a RUNBOOK.md-t az új paranccsal
-2. ✅ Ha a parancs szerepel:
-   - Futtasd normálisan (nincs engedélykérés)
-
-#### Példa settings.local.json bejegyzés:
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(node build.js:*)",
-      "Bash(npm start)",
-      "Bash(mkdir:*)",
-      "Bash(mv:*)"
-    ]
-  }
-}
-```
+#### Lepesek:
+1. Ha a parancs NEM szerepel a `permissions.allow` listaban:
+   - Futtasd a parancsot (user jovahagyja)
+   - Azonnal add hozza a `.claude/settings.local.json`-hoz
+   - Frissitsd a RUNBOOK.md-t az uj paranccsal
+2. Ha a parancs szerepel:
+   - Futtasd normalisan (nincs engedelykeres)
 
 ---
 
-## 🚀 Szerver Működés
+## Szerver Mukodes
 
-### Aktív Szerver
+### Aktiv Szerver
 - **Port**: 8300
 - **URL**: http://localhost:8300
-- **Főoldal**: http://localhost:8300/ (egyetlen index.html)
+- **Fooldal**: http://localhost:8300/index.html
 
-### Szerver Indítás (v3.0 - Build-based)
+### Szerver Inditas (fiori run)
 
-**Új rendszer**: Az üzemmód a szerver indításakor fix, nem URL paraméter!
+**A `fiori run` parancs (a `@sap/ux-ui5-tooling` csomag resze) szolgalja ki az alkalmazast.**
+Az uzzemmod a hasznalt YAML konfiguracios fajl altal van meghatarozva.
 
 ```bash
-# CDN mód (alapértelmezett)
+# Local mod (alapertelmezett - ui5.yaml, SAPUI5 framework a node_modules-bol)
 npm start
 # vagy
-npm run start:cdn
-
-# Local mód
 npm run start:local
 
-# Backend mód
+# CDN mod (ui5-cdn.yaml, fiori-tools-proxy a sapui5.hana.ondemand.com-rol)
+npm run start:cdn
+
+# Backend mod (ui5-backend.yaml, CDN + backend proxy 192.168.1.10:9000)
 npm run start:backend
-
-# Hybrid mód
-npm run start:hybrid
 ```
 
-**Hogyan működik?**
-1. `node build.js [env]` - Beinjektálja a `window.UI5_ENVIRONMENT` változót az index.html-be
-2. Elindítja a megfelelő szervert (http-server vagy UI5 CLI)
-3. Megnyitja a böngészőt az `http://localhost:8300/` URL-en
-
-**Nincs szükség URL paraméterre!** (`?env=cdn` NEM kell többé)
-
-### Szerver Leállítás
+**Smart Start parancsok** (port-ellenorzes + autokilll + fiori run):
 ```bash
-# Port használat ellenőrzése
-netstat -ano | findstr :8300
-
-# Process leállítása (PID-t helyettesítsd)
-cmd //c "taskkill /PID [PID] /F"
+npm run smart-start              # Local mod (alapertelmezett)
+npm run smart-start:cdn          # CDN mod
+npm run smart-start:local        # Local mod (explicit)
+npm run smart-start:backend      # Backend mod
 ```
 
-### Háttérben Futó Task Ellenőrzése
-Ha a szerver task ID-vel fut (pl. b079a0d), akkor a TaskOutput tool-lal ellenőrizhető.
+**Hogyan mukodik?**
+1. `fiori run` a `ui5.yaml` (vagy `--config` altal megadott YAML) alapjan indul
+2. A YAML `framework` szekcio meghatarozza a SAPUI5 verziót (1.105.0)
+3. Local modban a UI5 CLI framework letolti es szolgalja a SAPUI5-ot
+4. CDN/Backend modban a `fiori-tools-proxy` middleware proxy-zza a `/resources` kereseket
+5. Megnyitja a bongeszot az `http://localhost:8300/index.html` URL-en
+
+**Nincs build lepes!** Az `index.html` statikus, nincs template injection.
+
+### Szerver Leallitas
+```bash
+# macOS - Port hasznalat ellenorzese
+lsof -ti:8300
+
+# macOS - Process leallitasa
+kill -9 $(lsof -ti:8300)
+```
+
+### Hatterben Futo Task Ellenorzese
+Ha a szerver task ID-vel fut, akkor a TaskOutput tool-lal ellenorizheto.
 
 ---
 
-## 🌍 Environment Módok
+## Environment Modok (3 YAML konfig)
 
-**Új (v3.0)**: Egyetlen URL minden módhoz!
+**Egyetlen URL minden modhoz:** `http://localhost:8300/index.html`
 
-### Minden Mód:
-```
-http://localhost:8300/
-```
+Az uzzemmod a szerver inditasakor valasztott YAML konfiguracioval van megadva. Az `index.html` mindig ugyanaz.
 
-### Legacy URL-ek (archív):
-A `legacy/` mappában találhatók a régi URL paraméter alapú verziók:
-- `http://localhost:8300/legacy/index-configurable.html?env=cdn`
-- `http://localhost:8300/legacy/index-configurable.html?env=backend`
-- `http://localhost:8300/legacy/index-configurable.html?env=local`
+### 1. Local mod (alapertelmezett) -- `ui5.yaml`
+- SAPUI5 a framework szekcio alapjan, a UI5 CLI tolti le es szolgalja
+- Nincs proxy middleware
+- Offline mukodes (elso letoltes utan)
+- `npm start` vagy `npm run start:local`
+
+### 2. CDN mod -- `ui5-cdn.yaml`
+- `fiori-tools-proxy` middleware proxy-zza a SAPUI5-ot a `sapui5.hana.ondemand.com`-rol
+- Internet kapcsolat szukseges
+- Fix verzio: 1.105.0 (a YAML-ban megadva)
+- `npm run start:cdn`
+
+### 3. Backend mod -- `ui5-backend.yaml`
+- `fiori-tools-proxy` a SAPUI5-ot CDN-rol + backend proxy `192.168.1.10:9000`-re
+- LAN kapcsolat szukseges a backendhez
+- `npm run start:backend`
+
+### Osszefoglalo
+
+| Mod | YAML | Proxy | SAPUI5 Forras | Halozat |
+|-----|------|-------|---------------|---------|
+| **Local** | `ui5.yaml` | Nincs | UI5 CLI framework | Nem kell (cache utan) |
+| **CDN** | `ui5-cdn.yaml` | fiori-tools-proxy | sapui5.hana.ondemand.com | Internet |
+| **Backend** | `ui5-backend.yaml` | fiori-tools-proxy | sapui5.hana.ondemand.com + backend | Internet + LAN |
 
 ---
 
-## 🧪 Tesztelési Checklist
+## Tesztelesi Checklist
 
-### Minden Változtatás Után:
+### Minden Valtoztatas Utan:
 
-1. **Fájl mentés** - Ensure file is saved
-2. **Browser tesztelés Claude által**:
-   - [ ] Screenshot készítés
-   - [ ] Console log ellenőrzés
-   - [ ] Network requests ellenőrzés
-   - [ ] Funkció validálás
-3. **User értesítés** - "Kész, nézd meg te is!"
+1. **Fajl mentes** - Ensure file is saved
+2. **Browser teszteles Claude altal**:
+   - [ ] Screenshot keszites
+   - [ ] Console log ellenorzes
+   - [ ] Network requests ellenorzes
+   - [ ] Funkcio validalas
+3. **User ertesites** - "Kesz, nezd meg te is!"
 
 ### Splash Screen Specifikus:
-- [ ] Videó betöltődik
+- [ ] Video betoltodik
 - [ ] Poster megjelenik
-- [ ] Autoplay működik
-- [ ] Fade-out animáció smooth
-- [ ] UI5 app betöltődik utána
-- [ ] Environment badge látható
+- [ ] Autoplay mukodik
+- [ ] Fade-out animacio smooth
+- [ ] UI5 app betoltodik utana
+
+### SAPUI5 Specifikus:
+- [ ] `resources/sap-ui-core.js` betoltodik (Network tab)
+- [ ] `sap.ui.version` elerheto a console-ban
+- [ ] Nincs OpenUI5 referencia sehol
+- [ ] Error overlay megjelenik, ha UI5 nem toltodik be (ui5-error-handler.js)
+
+### Mod-specifikus:
+- [ ] Local: `npm start` -> SAPUI5 a framework-bol
+- [ ] CDN: `npm run start:cdn` -> proxy a sapui5.hana.ondemand.com-rol
+- [ ] Backend: `npm run start:backend` -> CDN + backend proxy
 
 ---
 
-## 📝 Git Workflow
+## Git Workflow
 
-### Minden Commit Előtt:
+### Minden Commit Elott:
 ```bash
 git status
 ```
 
-### Commit Üzenet Formátum:
+### Commit Uzenet Formatum:
 ```
 type: Short description
 
 - Detailed change 1
 - Detailed change 2
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
 ### Types:
-- `feat:` - Új funkció
+- `feat:` - Uj funkcio
 - `fix:` - Bugfix
-- `docs:` - Dokumentáció
-- `refactor:` - Refaktorálás
+- `docs:` - Dokumentacio
+- `refactor:` - Refaktoralas
 - `test:` - Tesztek
-- `chore:` - Karbantartás
+- `chore:` - Karbantartas
 
 ### Push
 ```bash
@@ -356,111 +389,147 @@ git push origin main
 
 ---
 
-## 🔧 Gyakori Műveletek
+## Gyakori Muveletek
 
-### Config.js Módosítás
-Backend URL változtatás:
-```javascript
-backend: {
-    url: 'http://YOUR_IP:PORT/resources/sap-ui-core.js'
-}
+### YAML konfig modositas
+Backend URL valtoztatas (`ui5-backend.yaml`):
+```yaml
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      configuration:
+        backend:
+          - path: /sap
+            url: http://YOUR_IP:YOUR_PORT
 ```
 
-### Splash Screen Időzítés
-`index-configurable.html`:
-```javascript
-}, 500); // <- ms delay
+CDN verzio valtoztatas (minden YAML-ban):
+```yaml
+framework:
+  name: SAPUI5
+  version: "1.120.0"  # <- Uj verzio
 ```
 
-### Videó Sebesség
+### Splash Screen Idozites
+`splash-screen.js` fajlban allithato.
+
+### Video Sebesseg
 ```javascript
 video.playbackRate = 0.2; // 0.2 = 5x lassabb
 ```
 
+### Uj middleware hozzaadasa
+A YAML `server.customMiddleware` szekcioban:
+```yaml
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ui5:
+          path:
+            - /resources
+            - /test-resources
+          url: https://sapui5.hana.ondemand.com
+          version: "1.105.0"
+```
+
 ---
 
-## 🐛 Hibaelhárítás
+## Hibaalharitas
 
 ### Port Foglalt Hiba
 ```bash
-# Ellenőrizd mi használja a portot
-netstat -ano | findstr :8300
+# macOS - Ellenorizd mi hasznalja a portot
+lsof -ti:8300
 
-# Állítsd le a folyamatot
-cmd //c "taskkill /PID [PID] /F"
+# macOS - Allitsd le a folyamatot
+kill -9 $(lsof -ti:8300)
+
+# Vagy hasznald a smart-start-ot (automatikusan kezeli):
+npm run smart-start
 ```
 
-### Backend Nem Elérhető
-- Normális ha 192.168.1.10:9000 offline
-- Fallback: Használd CDN mode-ot
+### Backend Nem Elerheto
+- Normalis ha 192.168.1.10:9000 offline
+- Fallback: Hasznald Local vagy CDN mode-ot
 
 ### i18n 404 Errorok
 - Nem kritikus
-- i18n fájlok opcionálisak
+- i18n fajlok opcionalisak
 
-### UI5 Nem Tölt Be
-1. Ellenőrizd Network tab-ot
-2. Ellenőrizd Console error-okat
-3. Próbáld CDN mode-ot
-4. Clear cache + hard reload (Ctrl+Shift+R)
+### UI5 Nem Tolt Be
+1. Ellenorizd Network tab-ot (F12) - `resources/sap-ui-core.js` betoltodik-e
+2. Ellenorizd Console error-okat
+3. Ellenorizd, hogy a `fiori run` szerver fut-e
+4. Probald mas moddal (pl. `npm run start:cdn` helyett `npm start`)
+5. Clear cache + hard reload (Cmd+Shift+R)
+
+### fiori run nem indul
+1. Ellenorizd hogy `@sap/ux-ui5-tooling` telepitve van-e: `npm list @sap/ux-ui5-tooling`
+2. Ellenorizd a YAML szintaxist
+3. Probald: `npm install` majd ujra `npm start`
+
+### Error Overlay Megjelenik
+- Az `ui5-error-handler.js` 15 masodperc utan mutatja, ha a SAPUI5 nem toltodott be
+- Ellenorizd a Network tab-ot a `resources/sap-ui-core.js` keresert
+- Ellenorizd, hogy a megfelelo mod szervere fut
 
 ---
 
-## 📊 Monitoring
+## Monitoring
 
 ### Browser DevTools
-- **Console**: Hibaüzenetek, logok
-- **Network**: Resource betöltés, timing
-- **Application**: LocalStorage értékek
+- **Console**: Hibauezenetek, logok, `[UI5]` prefixu uzenetek az error handler-tol
+- **Network**: Resource betoltes, timing, `resources/sap-ui-core.js` ellenorzes
+- **Application**: LocalStorage ertekek
 
-### Ellenőrizendő:
-- UI5 bootstrap script betöltődik
-- Splash video letöltődik (908KB)
-- Poster image betöltődik (25KB)
-- Environment badge helyesen jelenik meg
+### Ellenorizendo:
+- UI5 bootstrap script betoltodik (`resources/sap-ui-core.js`)
+- Splash video letoltodik (908KB)
+- Poster image betoltodik (25KB)
 - Nincs CORS error
+- Error overlay NEM jelenik meg (ha megjelenik, UI5 nem toltodott be)
 
 ---
 
-## 📞 Gyors Referencia
+## Gyors Referencia
 
-### Dokumentációk
-- **README.md** - Használati útmutató
-- **KONZEPCIÓ.md** - Architektúra
-- **FEJLESZTOI_UTASITAS.md** - Integráció
-- **SESSION_HANDOFF.md** - Session handoff
+### Dokumentaciok
+- **README.md** - Hasznalati utmutato
+- **hopper/RUNBOOK.md** - Ez a fajl (mukodesi utmutato)
+- **hopper/CHEAT_SHEET.md** - Gyors referencia
 
 ### GitHub
 - **Repo**: https://github.com/ac4y-auto/ui5-splash-screen-poc
 - **User**: ac4y-auto
 - **Branch**: main
 
-### Eszközök
+### Eszkozok
 - Node.js: v20.20.0
-- Git: Telepítve
+- Git: Telepitve
 - GitHub CLI: Bejelentkezve (ac4y)
 
 ---
 
-## ✅ Session Start Checklist
+## Session Start Checklist
 
-1. [ ] Ellenőrizd git status
-2. [ ] Ellenőrizd szerver fut-e (port 8300)
-3. [ ] Ha nem fut, indítsd: `npm start`
-4. [ ] Nyisd meg böngészőben: http://localhost:8300/index-configurable.html
-5. [ ] **Claude tesztel először**
+1. [ ] Ellenorizd git status
+2. [ ] Ellenorizd szerver fut-e (port 8300)
+3. [ ] Ha nem fut, inditsd: `npm start`
+4. [ ] Nyisd meg bongeszobe: http://localhost:8300/index.html
+5. [ ] **Claude tesztel eloszor**
 6. [ ] Git pull ha kell: `git pull origin main`
 
 ---
 
-## ✅ Session End Checklist
+## Session End Checklist
 
-1. [ ] Minden változtatás commit-olva
+1. [ ] Minden valtoztatas commit-olva
 2. [ ] Push GitHub-ra
-3. [ ] SESSION_HANDOFF.md frissítve
-4. [ ] Szerver leállítható (vagy futhat)
+3. [ ] Szerver leallithato (vagy futhat)
 
 ---
 
-**Frissítve**: 2026-02-12
-**Verzió**: 1.0
+**Frissitve**: 2026-02-15
+**Verzio**: 2.0 (fiori run architektura)

@@ -1,429 +1,416 @@
-# UI5 Splash Screen - Környezeti Konfiguráció Koncepció
+# UI5 Splash Screen - Kornyezeti Konfiguracio Koncepcio
 
-## Áttekintés
+## Attekintes
 
-Ez a projekt egy konfigurálható UI5 splash screen megoldást valósít meg, amely három különböző UI5 forrásból tud betölteni:
+Ez a projekt egy konfiguralható SAPUI5 splash screen megoldast valosit meg, amely harom kulonbozo modban tud futni, YAML konfiguraciok altal vezerelve:
 
-1. **CDN** - OpenUI5 SDK (internet)
-2. **Local** - node_modules (helyi telepítés)
-3. **Backend** - Egyedi backend szerver (192.168.1.10:9000)
+1. **Local** - SAPUI5 framework a helyi cache-bol (ui5 serve feloldja)
+2. **CDN** - SAP CDN-rol proxyzva (fiori-tools-proxy)
+3. **Backend** - SAP CDN + egyedi backend szerver proxyzva (fiori-tools-proxy)
 
-## Architektúra
+**Fontos:** A projekt kizarolag **SAPUI5**-ot hasznal (nem OpenUI5-ot).
 
-### 1. Konfiguráció Réteg
+## Architektura
 
-**Fájl**: `config.js`
+### Architektura Attekintes
 
-Ez a központi konfigurációs fájl tartalmazza az összes környezet definícióját:
-
-```javascript
-const UI5_CONFIGS = {
-    cdn: { ... },
-    local: { ... },
-    backend: { ... }
-}
+```
++-------------------+     +-------------------+     +-------------------+
+|   ui5.yaml        |     |  ui5-cdn.yaml     |     | ui5-backend.yaml  |
+|   (Local mod)     |     |  (CDN mod)        |     | (Backend mod)     |
++-------------------+     +-------------------+     +-------------------+
+         |                         |                         |
+         +------------+------------+------------+------------+
+                      |                         |
+                      v                         v
+              +---------------+        +------------------+
+              |  fiori run    |        | fiori-tools-proxy|
+              |  (ui5 serve)  |<------>| (middleware)      |
+              +---------------+        +------------------+
+                      |
+                      v
+              +---------------+
+              | index.html    |
+              | (STATIKUS)    |
+              +---------------+
+                      |
+         +------------+------------+
+         |            |            |
+         v            v            v
+  +-----------+ +-----------+ +-----------+
+  | splash-   | | sap-ui-   | | ui5-error-|
+  | screen.js | | bootstrap | | handler.js|
+  | (API)     | | (script)  | | (overlay) |
+  +-----------+ +-----------+ +-----------+
+                      |
+                      v
+              +---------------+
+              | Component.js  |
+              | (App logika)  |
+              +---------------+
 ```
 
-**Funkciók**:
-- `getCurrentEnv()` - Aktuális környezet lekérdezése
-- `getUI5BootstrapUrl()` - UI5 bootstrap URL generálása
-- `saveEnvPreference()` - Környezet preferencia mentése localStorage-ba
+### 1. Server Reteg: fiori run + YAML konfigok
 
-### 2. Dinamikus Bootstrap
+A projektet a `fiori run` parancs szolgalja ki, amely a `@sap/ux-ui5-tooling` csomag resze. Ez a parancs a `ui5 serve`-ot wrapeli es kiegesziti a `fiori-tools-proxy` middleware-rel.
 
-Az `index-configurable.html` dinamikusan tölti be a megfelelő UI5 verziót:
+**Nincs build lepes!** Az `index.html` statikus fajl, kozvetlenul szerkesztheto es verziokezelt.
 
-```javascript
-// 1. Környezet detektálása
-var env = getCurrentEnv();
+A harom YAML konfig hatarozza meg, hogyan oldodik fel a `/resources` utvonal:
 
-// 2. Script tag generálása
-var script = document.createElement('script');
-script.src = config.url;
+| YAML Konfig | Mod | /resources feloldas | Backend proxy |
+|---|---|---|---|
+| `ui5.yaml` | Local | ui5 serve (framework cache) | Nincs |
+| `ui5-cdn.yaml` | CDN | fiori-tools-proxy --> SAP CDN | Nincs |
+| `ui5-backend.yaml` | Backend | fiori-tools-proxy --> SAP CDN | `/sap` --> backend szerver |
 
-// 3. Injektálás a DOM-ba
-document.head.appendChild(script);
+### 2. Runtime Reteg: Statikus index.html + App-Controlled Splash
+
+Az `index.html` egy standard SAP bootstrap-et tartalmaz:
+
+```html
+<script id="sap-ui-bootstrap"
+    src="resources/sap-ui-core.js"
+    data-sap-ui-theme="sap_horizon"
+    data-sap-ui-libs="sap.m"
+    data-sap-ui-async="true"
+    data-sap-ui-onInit="module:sap/ui/core/ComponentSupport"
+    data-sap-ui-resourceroots='{"myapp": "./"}'>
+</script>
 ```
 
-### 3. Környezet Váltás Módjai
+A `src="resources/sap-ui-core.js"` relativ URL-t a szerver reteg oldja fel, a bongeszo szamara transzparensen.
 
-#### A) URL paraméterrel
-```
-http://localhost:8300/index-configurable.html?env=backend
-http://localhost:8300/index-configurable.html?env=local
-http://localhost:8300/index-configurable.html?env=cdn
-```
+## Hasznalati Modok
 
-#### B) NPM scriptekkel
+### 1. Local Mod (Alapertelmezett)
+
+**YAML konfig:** `ui5.yaml` (nincs `--config` parameter, ez az alapertelmezett)
+
+**Mukodes:** A `ui5 serve` maga oldja fel a SAPUI5 framework-ot a `framework` szekcio alapjan. Az elso inditaskor letolti a SAPUI5 csomagot a `~/.ui5/framework/` konyvtarba (cache), ezutan helyi fajlokbol szolgalja ki.
+
+**Elonyok:**
+- Offline mukodes (az elso letoltes utan)
+- Gyors betoltes (helyi fajlok)
+- Verzio kontroll (YAML-ban megadott verzio)
+
+**Hatranyok:**
+- Elso inditaskor letoltesi ido
+- Helyi tarhelyet hasznal
+
+**Hasznalat:**
 ```bash
-npm run start:cdn       # CDN verzió
-npm run start:local     # Local verzió
-npm run start:backend   # Backend verzió
+npm start
+# vagy
+npm run start:local
 ```
 
-#### C) LocalStorage-ból
-A kiválasztott környezet mentésre kerül és automatikusan újratöltődik.
+### 2. CDN Mod
 
-## Használati Módok
+**YAML konfig:** `ui5-cdn.yaml`
 
-### 1. CDN Mód (Alapértelmezett)
+**Mukodes:** A `fiori-tools-proxy` middleware elfogja a `/resources` es `/test-resources` kereseket, es proxyzza a SAP CDN-re (`https://sapui5.hana.ondemand.com`).
 
-**Előnyök**:
-- Nincs szükség helyi UI5 telepítésre
-- Mindig a legújabb verzió
-- Gyors kezdés
+**Elonyok:**
+- Mindig a megadott SAPUI5 verzio
+- Nincs szukseg helyi cache-re
+- Egyszer beallitod a YAML-ban, utana transzparens
 
-**Hátrányok**:
-- Internet kapcsolat szükséges
-- Lassabb betöltés (külső szerver)
+**Hatranyok:**
+- Internet kapcsolat szukseges
+- Lassabb betoltes (kulso szerver)
 
-**Használat**:
+**Hasznalat:**
 ```bash
 npm run start:cdn
 ```
 
-Vagy egyszerűen:
-```bash
-npm start
+**YAML konfig tartalma:**
+```yaml
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ui5:
+          path:
+            - /resources
+            - /test-resources
+          url: https://sapui5.hana.ondemand.com
+          version: "1.105.0"
 ```
 
-### 2. Local Mód (node_modules)
+### 3. Backend Mod
 
-**Előnyök**:
-- Offline működés
-- Gyors betöltés (helyi fájl)
-- Verzió kontroll
+**YAML konfig:** `ui5-backend.yaml`
 
-**Hátrányok**:
-- Telepítés szükséges
-- Manuális frissítés
+**Mukodes:** A `fiori-tools-proxy` ket feladatot lat el:
+1. SAPUI5 resources proxyzasa a SAP CDN-rol (mint a CDN modban)
+2. Backend keresek proxyzasa (`/sap` utvonal) egy egyedi szerverre
 
-**Telepítés**:
-```bash
-npm install @openui5/sap.ui.core @openui5/sap.m @openui5/themelib_sap_horizon
-```
+**Elonyok:**
+- SAPUI5 a CDN-rol + valodi backend adatok
+- CORS problemak kikerulese (a proxy kezeli)
+- Belso halozaton is mukodik
 
-**Használat**:
-```bash
-npm run start:local
-```
+**Hatranyok:**
+- Backend szerver szukseges
+- Internet kapcsolat a SAPUI5-hoz (CDN proxy)
 
-### 3. Backend Mód (Custom Server)
+**Backend kovetelmeny:**
+- UI5 alkalmazas altal hasznalt OData/REST szolgaltatasok elerhetok a megadott URL-en
+- Pelda: `http://192.168.1.10:9000/sap/opu/odata/...`
 
-**Előnyök**:
-- Központi UI5 verzió kezelés
-- Egyedi testreszabások
-- Belső hálózaton gyors
-
-**Hátrányok**:
-- Backend szerver szükséges
-- Hálózati kapcsolat függőség
-
-**Backend követelmények**:
-- UI5 resources elérhető a `/resources/` útvonalon
-- CORS engedélyezve
-- `http://192.168.1.10:9000/resources/sap-ui-core.js` elérhető
-
-**Használat**:
+**Hasznalat:**
 ```bash
 npm run start:backend
 ```
 
-## Projekt Struktúra
+**YAML konfig tartalma:**
+```yaml
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        ui5:
+          path:
+            - /resources
+            - /test-resources
+          url: https://sapui5.hana.ondemand.com
+          version: "1.105.0"
+        backend:
+          - path: /sap
+            url: http://192.168.1.10:9000
+```
+
+## Projekt Struktura
 
 ```
 ui5-splash-screen-poc/
-├── index.html                  # Eredeti CDN verzió (kompatibilitás)
-├── index-configurable.html     # Új konfigurálható verzió
-├── index-demo.html             # Demo verzió (CSS animációval)
-├── config.js                   # Környezeti konfiguráció
-├── package.json                # NPM scriptek és függőségek
-├── .env.example                # Környezeti változók példa
-├── Component.js                # UI5 Component
-├── manifest.json               # App manifest
-├── view/
-│   └── App.view.xml           # UI5 View
-├── controller/
-│   └── App.controller.js      # UI5 Controller
-├── splash-video.mp4           # Splash screen videó
-├── splash-poster.jpeg         # Poster kép
-├── README.md                   # Általános dokumentáció
-├── FEJLESZTOI_UTASITAS.md    # Fejlesztői útmutató
-└── KONZEPCIÓ.md              # Ez a fájl
-```
-
-## Konfiguráció Részletek
-
-### config.js Struktúra
-
-```javascript
-{
-    cdn: {
-        name: 'CDN (OpenUI5 SDK)',
-        url: 'https://sdk.openui5.org/resources/sap-ui-core.js',
-        description: 'Uses OpenUI5 from official CDN'
-    },
-    local: {
-        name: 'Local (node_modules)',
-        url: './node_modules/@openui5/sap.ui.core/resources/sap-ui-core.js',
-        description: 'Uses locally installed OpenUI5 from node_modules'
-    },
-    backend: {
-        name: 'Backend Server',
-        url: 'http://192.168.1.10:9000/resources/sap-ui-core.js',
-        description: 'Uses UI5 from custom backend server'
-    }
-}
-```
-
-### Backend URL Testreszabása
-
-Ha más backend URL-t szeretnél használni, módosítsd a `config.js` fájlt:
-
-```javascript
-backend: {
-    name: 'Backend Server',
-    url: 'http://YOUR_SERVER:PORT/resources/sap-ui-core.js',
-    description: 'Uses UI5 from custom backend server'
-}
++-- index.html                  # Statikus HTML (standard SAP bootstrap)
++-- ui5.yaml                    # Local mod konfig (default)
++-- ui5-cdn.yaml                # CDN mod konfig (fiori-tools-proxy)
++-- ui5-backend.yaml            # Backend mod konfig (CDN + backend proxy)
++-- package.json                # NPM scriptek es fuggosegek
++-- start.js                    # Smart Start (port management + fiori run)
++-- Component.js                # UI5 Component (app logika)
++-- manifest.json               # App manifest
++-- splash-screen.js            # Splash screen logika (App-Controlled API)
++-- splash-screen.css           # Splash screen stilusok
++-- ui5-error-handler.js        # UI5 betoltesi hiba kezeles (error overlay)
++-- splash-video.mp4            # Splash screen video
++-- splash-poster.jpeg          # Poster kep (video toltesig)
++-- view/
+|   +-- App.view.xml            # UI5 View
++-- controller/
+|   +-- App.controller.js       # UI5 Controller
++-- hopper/
+    +-- WIRING.md               # Architektura/wiring dokumentum
+    +-- KONCEPCIO.md             # Ez a fajl
 ```
 
 ## NPM Scriptek
 
-### Indítási Scriptek
+### Inditasi Scriptek
 
-| Script | Parancs | Leírás |
-|--------|---------|--------|
-| `start` | `npm start` | Alapértelmezett (CDN) indítás |
-| `start:cdn` | `npm run start:cdn` | CDN verzió indítása |
-| `start:local` | `npm run start:local` | Local verzió indítása |
-| `start:backend` | `npm run start:backend` | Backend verzió indítása |
+| Script | Parancs | Mod | YAML |
+|---|---|---|---|
+| `start` | `npx fiori run --port 8300 --open index.html` | Local | `ui5.yaml` |
+| `start:local` | `npx fiori run --port 8300 --open index.html` | Local | `ui5.yaml` |
+| `start:cdn` | `npx fiori run --port 8300 --config ui5-cdn.yaml --open index.html` | CDN | `ui5-cdn.yaml` |
+| `start:backend` | `npx fiori run --port 8300 --config ui5-backend.yaml --open index.html` | Backend | `ui5-backend.yaml` |
 
-### Működés
+### Smart Start Scriptek
 
-1. **cross-env** - Környezeti változó beállítása (platform-független)
-2. **http-server** - Dev szerver indítása 8300-as porton
-3. **--cors** - CORS engedélyezése
-4. **-o** - Automatikus böngésző megnyitás
+| Script | Parancs | Mod |
+|---|---|---|
+| `smart-start` | `node start.js` | Local |
+| `smart-start:local` | `node start.js` | Local |
+| `smart-start:cdn` | `node start.js ui5-cdn.yaml` | CDN |
+| `smart-start:backend` | `node start.js ui5-backend.yaml` | Backend |
 
-## Környezet Detektálás Prioritás
+A Smart Start scriptek elonye: automatikus port conflict feloldas (meglevo projekt processz leallitasa).
 
-A rendszer a következő sorrendben dönti el, melyik környezetet használja:
+### Mukodes
 
-1. **URL paraméter** (`?env=backend`) - Legmagasabb prioritás
-2. **LocalStorage** (`localStorage.getItem('ui5_env')`)
-3. **Alapértelmezett** (`cdn`)
+1. **fiori run** - `@sap/ux-ui5-tooling` csomag parancs (ui5 serve wrapper)
+2. **--port 8300** - Dev szerver a 8300-as porton
+3. **--config** - Alternativ YAML konfig fajl megadasa
+4. **--open index.html** - Automatikus bongeszo megnyitas
 
-## Fejlesztői Workflow
+## SAPUI5 vs OpenUI5
 
-### 1. Új Környezet Hozzáadása
+A projekt **kizarolag SAPUI5**-ot hasznal. Ez a YAML konfigokban van rogzitve:
 
-**Lépések**:
+```yaml
+framework:
+  name: SAPUI5        # <-- NEM OpenUI5
+  version: "1.105.0"
+```
 
-1. Add hozzá a konfigurációt a `config.js`-hez:
+**SAPUI5 es OpenUI5 kulonbseg:**
+
+| | SAPUI5 | OpenUI5 |
+|---|---|---|
+| Licenc | SAP kereskedelmi | Apache 2.0 |
+| Library-k | Teljes (sap.ushell, sap.fe, stb.) | Korlatozott |
+| CDN | sapui5.hana.ondemand.com | sdk.openui5.org |
+| Hasznalat | SAP ugyfelek | Nyilt forras projektek |
+
+## Splash Screen Mukodes
+
+### App-Controlled Mod
+
+A splash screen-t az UI5 alkalmazas (Component.js) iranyitja a `window.SplashScreen` API-n keresztul:
+
 ```javascript
-newenv: {
-    name: 'New Environment',
-    url: 'http://example.com/ui5/sap-ui-core.js',
-    description: 'Description here'
+// Component.js
+init: function() {
+    // Splash START
+    if (window.SplashScreen) {
+        window.SplashScreen.show();
+    }
+
+    // Uzleti adatok betoltese
+    this.loadApplicationData()
+        .then(function() {
+            // Splash END - adatok keszen
+            if (window.SplashScreen) {
+                window.SplashScreen.hide(500);
+            }
+        })
+        .catch(function() {
+            // Splash END - hiba eseten is
+            if (window.SplashScreen) {
+                window.SplashScreen.hide(0);
+            }
+        });
 }
 ```
 
+### SplashScreen API
+
+| Metodus | Leiras |
+|---|---|
+| `SplashScreen.show()` | Splash screen megjelenitese, video inditas |
+| `SplashScreen.hide(delay)` | Splash screen elrejtese fade-out animacioval |
+| `SplashScreen.isVisible()` | Lathatosag lekerdezese (boolean) |
+
+### Splash Screen Parameterek
+
+- **Video:** `splash-video.mp4` (5x lassitott, playbackRate = 0.2)
+- **Poster:** `splash-poster.jpeg` (video toltesig lathato)
+- **Fade-out:** 1 masodperc (CSS transition)
+
+## Hiba Kezeles
+
+### ui5-error-handler.js
+
+Ket mechanizmus figyeli a SAPUI5 betoltest:
+
+1. **Script error event:** Ha a `sap-ui-core.js` nem toltodik be (halozati hiba, 404)
+2. **Timeout (15 mp):** Ha 15 masodperc utan sem letezik a `sap` globalis objektum
+
+Hiba eseten:
+- Splash screen elrejtese (ha lathato)
+- Error overlay megjelenites (cim, uzenet, forras URL, ujratoltesi gomb)
+- Technikai reszletek (kinyithato szekció)
+- Lehetseges megoldasok listaja
+
+### Component.js hiba kezeles
+
+Ha az uzleti adatok betoltese sikertelen:
+- Splash screen azonnali elrejtese
+- `sap.m.MessageBox.error()` dialog megjelenites
+
+## Fejlesztoi Workflow
+
+### 1. Uj Backend URL Beallitasa
+
+Modositsd a `ui5-backend.yaml` fajlt:
+
+```yaml
+backend:
+  - path: /sap
+    url: http://UJ_SZERVER:PORT
+```
+
+### 2. SAPUI5 Verzio Valtas
+
+Modositsd **mindharom** YAML fajlban a framework verziót:
+
+```yaml
+framework:
+  name: SAPUI5
+  version: "1.120.0"    # <-- Uj verzio
+```
+
+CDN es Backend modoknal a proxy verziót is:
+
+```yaml
+configuration:
+  ui5:
+    version: "1.120.0"  # <-- Uj verzio
+```
+
+### 3. Uj Mod Hozzaadasa
+
+1. Hozz letre egy uj YAML fajlt (pl. `ui5-staging.yaml`)
 2. Add hozzá az NPM scriptet a `package.json`-hoz:
 ```json
-"start:newenv": "cross-env UI5_ENV=newenv npm run serve"
+"start:staging": "npx fiori run --port 8300 --config ui5-staging.yaml --open index.html"
+```
+3. Opcionalis Smart Start:
+```json
+"smart-start:staging": "node start.js ui5-staging.yaml"
 ```
 
-3. Dokumentáld a `KONZEPCIÓ.md`-ben
+## Hibakereses
 
-### 2. Backend Szerver Setup
+### 1. SAPUI5 nem toltodik be
 
-**Minimális Backend Követelmények**:
+**Ellenorizd:**
+- A bongeszo Network tab-jat (F12)
+- Fut-e a fejlesztoi szerver (`fiori run`)
+- A YAML konfig helyes-e
+- CDN modban: van-e internet kapcsolat
+- Local modban: letoltodott-e a framework (`~/.ui5/framework/`)
 
-```javascript
-// Node.js példa (Express)
-const express = require('express');
-const app = express();
+### 2. Backend nem elerheto
 
-// CORS engedélyezése
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    next();
-});
-
-// UI5 resources kiszolgálása
-app.use('/resources', express.static('path/to/ui5/resources'));
-
-app.listen(9000);
-```
-
-**SAPUI5/OpenUI5 telepítés**:
-- Töltsd le az OpenUI5 SDK-t
-- Vagy használj SAP UI5 tooling-ot
-- Vagy használj CDN proxy-t
-
-### 3. Local UI5 Telepítés
-
+**Ellenorizd:**
 ```bash
-# 1. Telepítsd az OpenUI5 csomagokat
-npm install --save-dev @openui5/sap.ui.core @openui5/sap.m @openui5/themelib_sap_horizon
-
-# 2. Indítsd el local módban
-npm run start:local
+curl -I http://192.168.1.10:9000/sap/
 ```
 
-## Splash Screen Konfiguráció
+**Ellenorizd a YAML-t:**
+- A `backend.path` megegyezik-e az alkalmazas altal hasznalt utvonallal
+- A `backend.url` helyes-e
 
-A splash screen működése minden környezetben azonos:
+### 3. Port foglalt
 
-- **Videó**: `splash-video.mp4` (5x lassított)
-- **Poster**: `splash-poster.jpeg`
-- **Időtartam**: 2 perc (120 000 ms)
-- **Fade-out**: 1 másodperc
-- **Méret**: 80% szélesség/magasság, középre igazítva
-
-### Splash Screen Testreszabás
-
-**Időtartam módosítása**:
-```javascript
-setTimeout(function() {
-    // ...
-}, 120000); // <- Változtasd ezt (ms)
-```
-
-**Videó sebesség módosítása**:
-```javascript
-video.playbackRate = 0.2; // <- 0.2 = 5x lassabb
-```
-
-**Méret módosítása**:
-```css
-#splash-video {
-    width: 80%;  /* <- Változtasd */
-    height: 80%; /* <- Változtasd */
-}
-```
-
-## Hibakeresés
-
-### 1. UI5 nem töltődik be
-
-**Ellenőrizd**:
-- Network tab a böngészőben
-- Console hibaüzenetek
-- CORS problémák
-- Backend szerver elérhető-e
-
-**Megoldás**:
-```javascript
-script.onerror = function() {
-    console.error('Failed to load UI5 from:', config.url);
-    // Fallback CDN-re
-    script.src = 'https://sdk.openui5.org/resources/sap-ui-core.js';
-};
-```
-
-### 2. Környezet nem vált
-
-**Ellenőrizd**:
-- URL paraméter helyesen van-e írva (`?env=backend`)
-- LocalStorage tartalmát (`localStorage.getItem('ui5_env')`)
-- Console log-okat
-
-**Tisztítás**:
-```javascript
-localStorage.removeItem('ui5_env');
-location.reload();
-```
-
-### 3. Backend CORS hiba
-
-**Ellenőrizd**:
+**Hasznalj Smart Start-ot:**
 ```bash
-curl -I http://192.168.1.10:9000/resources/sap-ui-core.js
+npm run smart-start:cdn
 ```
 
-**Szükséges header**:
-```
-Access-Control-Allow-Origin: *
-```
-
-## Best Practices
-
-### 1. Fejlesztés
-
-- Használj **CDN** módot gyors kezdéshez
-- Használj **local** módot offline fejlesztéshez
-- Használj **backend** módot csapat környezetben
-
-### 2. Production
-
-- Backend mód ajánlott belső hálózaton
-- CDN mód publikus alkalmazásokhoz
-- Mindig legyen fallback CDN-re
-
-### 3. Verziókezelés
-
-- Local módban verzionáld az OpenUI5 csomagokat
-- Backend módban központilag kezelj verziókat
-- CDN módban követd az OpenUI5 release-eket
-
-## Továbbfejlesztési Lehetőségek
-
-### 1. UI Selector
-
-Grafikus környezet váltó a UI-on:
-
-```html
-<select id="env-selector" onchange="switchEnv(this.value)">
-    <option value="cdn">CDN</option>
-    <option value="local">Local</option>
-    <option value="backend">Backend</option>
-</select>
+**Vagy mas portot:**
+```bash
+PORT=9000 npm run smart-start
 ```
 
-### 2. Verzió Információ
+## Tamogatas
 
-UI5 verzió megjelenítése:
+- SAPUI5 Verzio: 1.105.0+
+- Bongeszok: Chrome 80+, Firefox 75+, Safari 13+, Edge 80+
+- Node.js: 18+
+- @sap/ux-ui5-tooling: 1.20.0+
+- @ui5/cli: 4.0.0+
 
-```javascript
-sap.ui.getCore().attachInit(function() {
-    var version = sap.ui.version;
-    console.log('UI5 Version:', version);
-});
-```
+## Referenciak
 
-### 3. Performance Monitoring
-
-Betöltési idő mérése:
-
-```javascript
-var start = performance.now();
-script.onload = function() {
-    var duration = performance.now() - start;
-    console.log('UI5 loaded in:', duration, 'ms');
-};
-```
-
-### 4. Automatikus Fallback
-
-Ha backend nem elérhető, automatikus fallback CDN-re:
-
-```javascript
-script.onerror = function() {
-    console.warn('Backend failed, falling back to CDN');
-    loadUI5FromCDN();
-};
-```
-
-## Támogatás
-
-- UI5 Verzió: 1.120.0+
-- Böngészők: Chrome 80+, Firefox 75+, Safari 13+, Edge 80+
-- Node.js: 16+
-
-## Referenciák
-
-- [OpenUI5 Documentation](https://sdk.openui5.org/)
 - [SAP UI5 Tooling](https://sap.github.io/ui5-tooling/)
-- [UI5 Best Practices](https://sdk.openui5.org/topic/28fcd55b04654977b63dacbee0552712)
+- [SAPUI5 Documentation](https://sapui5.hana.ondemand.com/)
+- [Fiori Tools](https://help.sap.com/docs/SAP_FIORI_tools)
+- [fiori-tools-proxy](https://www.npmjs.com/package/@sap/ux-ui5-tooling)

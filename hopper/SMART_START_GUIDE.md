@@ -1,195 +1,259 @@
 # Smart Start Guide - Port Conflict Management
 
-**Verzió**: 3.1
-**Létrehozva**: 2026-02-15
-**Státusz**: Production Ready ✅
+**Verzio**: 4.0
+**Letrehozva**: 2026-02-15
+**Statusz**: Production Ready
 
 ---
 
-## 🎯 Mi az a Smart Start?
+## Mi az a Smart Start?
 
-A Smart Start egy intelligens szerver indító script, amely automatikusan kezeli a port konfliktusokat anélkül, hogy manuálisan kellene leállítanod a futó folyamatokat.
+A Smart Start egy intelligens szerver indito script, amely automatikusan kezeli a port konfliktusokat anelkul, hogy manualisan kellene leallitanod a futo folyamatokat.
 
-### Probléma
+### Problema
 
-**Hagyományos start:**
+**Hagyomanyos start:**
 ```bash
-npm run start:cdn
+npm start
 
 # Hiba: Port 8300 is already in use
 # EADDRINUSE: address already in use :::8300
 ```
 
-**Megoldás eddig:**
-1. Manuálisan megkeresed a PID-t: `lsof -ti:8300`
-2. Leölöd: `kill -9 <PID>`
-3. Újra próbálod: `npm run start:cdn`
+**Megoldas eddig:**
+1. Manualisan megkeresed a PID-t: `lsof -ti:8300`
+2. Leolod: `kill -9 <PID>`
+3. Ujra probalod: `npm start`
 
-### Megoldás Smart Starttal
+### Megoldas Smart Starttal
 
 ```bash
-npm start  # Automatikusan kezeli a port konfliktust!
+npm run smart-start  # Automatikusan kezeli a port konfliktust!
 ```
 
 ---
 
-## 🚀 Használat
+## Hasznalat
 
-### Alapértelmezett (CDN mód)
+### Alapertelmezett (Local mod - ui5.yaml)
 
 ```bash
-npm start
+npm run smart-start
 ```
 
-### Explicit Módok
+Ez a `fiori run`-t inditja a default `ui5.yaml` konfiguracioval (local SAPUI5 a node_modules-bol).
+
+### Explicit Modok
 
 ```bash
-npm run smart-start:cdn      # SAPUI5 CDN
-npm run smart-start:local    # Local UI5 CLI
-npm run smart-start:backend  # Backend szerver
-npm run smart-start:hybrid   # Hybrid (proxy)
+npm run smart-start          # Local SAPUI5 (ui5.yaml) - default
+npm run smart-start:cdn      # SAPUI5 CDN (ui5-cdn.yaml)
+npm run smart-start:backend  # Backend szerver (ui5-backend.yaml)
 ```
 
 ### Custom Port
 
 ```bash
+PORT=9000 npm run smart-start
 PORT=9000 npm run smart-start:cdn
 ```
 
 ---
 
-## 🔍 Működés
+## v4.0 Valtozasok (Migracio)
 
-### 1. Port Ellenőrzés
+### Regi architektura (v3.x)
 
-A script ellenőrzi, hogy a port (default: 8300) foglalt-e:
+```
+start.js -> build.js (environment injection) -> http-server / ui5 serve
+```
+
+A regi rendszerben a `start.js`:
+1. Futtatott egy `build.js` scriptet ami `index.template.html`-bol generalta az `index.html`-t
+2. Injektalte az environment valtozot (`window.UI5_ENVIRONMENT = 'cdn'`)
+3. `http-server`-t vagy `ui5 serve`-t inditott modtol fuggoen
+4. 4 mod: cdn, local, backend, hybrid
+
+### Uj architektura (v4.0)
+
+```
+start.js -> fiori run [--config yaml-file]
+```
+
+Az uj rendszerben a `start.js`:
+1. **Nem futtat build scriptet** - nincs build.js, nincs index.template.html
+2. **Nem injektal environment valtozot** - az `index.html` statikus
+3. `fiori run`-t indit opcionalis `--config` parameterrel
+4. 3 mod: Local (ui5.yaml), CDN (ui5-cdn.yaml), Backend (ui5-backend.yaml)
+
+| Jellemzo | v3.x (regi) | v4.0 (uj) |
+|----------|-------------|------------|
+| **Szerver** | http-server / ui5 serve | fiori run |
+| **Build** | build.js + index.template.html | Nincs (statikus index.html) |
+| **Konfiguracio** | Environment valtozo injektalas | YAML fajlok (ui5.yaml, ui5-cdn.yaml, ui5-backend.yaml) |
+| **Modok szama** | 4 (cdn, local, backend, hybrid) | 3 (local, cdn, backend) |
+| **Mod parameter** | `node start.js cdn` | `node start.js ui5-cdn.yaml` |
+| **Process azonositas** | http-server, ui5 serve | fiori, ui5 serve |
+
+---
+
+## Mukodes
+
+### 1. Port Ellenorzes
+
+A script ellenorzi, hogy a port (default: 8300) foglalt-e:
 
 ```javascript
 // macOS/Linux
-lsof -ti:8300
+lsof -ti:8300 -sTCP:LISTEN
 
 // Windows
 netstat -ano | findstr :8300
 ```
 
-### 2. Process Azonosítás
+### 2. Process Azonositas
 
-Ha a port foglalt, megnézi, hogy **ehhez a projekthez** tartozik-e a process:
+Ha a port foglalt, megnezi, hogy **ehhez a projekthez** tartozik-e a process:
 
 ```javascript
-// Ellenőrzi a command line-t
+// Ellenorzi a command line-t
 ps -p <PID> -o command=
 
 // Keres:
 // - 'ui5-splash-screen-poc' (projekt marker)
-// - 'http-server' (CDN/backend szerver)
-// - 'ui5 serve' (local/hybrid szerver)
+// - 'fiori' (fiori run szerver)
+// - 'ui5 serve' (ui5 CLI szerver)
 ```
 
-### 3. Döntés
+> **v4.0 valtozas:** A `http-server` mar nem szerepel a keresett folyamatok kozott.
+> Helyette `fiori` es `ui5 serve` a ket azonositando process.
 
-| Feltétel | Akció |
+### 3. Dontes
+
+| Feltetel | Akcio |
 |----------|-------|
-| Port szabad | ✅ Szerver indítás |
-| Port foglalt + saját projekt | 🔄 Process leöl + Szerver indítás |
-| Port foglalt + más projekt | ❌ Hibaüzenet + Exit |
+| Port szabad | Szerver inditas |
+| Port foglalt + sajat projekt | Process leol + Szerver inditas |
+| Port foglalt + mas projekt | Hibauzenet + Exit |
 
----
-
-## 📋 Kimenet Példák
-
-### Eset 1: Port Szabad
-
-```
-🚀 Smart Start - CDN Mode
-   Port: 8300
-   Project: ui5-splash-screen-poc
-
-✓  Port 8300 is available
-
-🔧 Building for environment: cdn...
-✅ Environment 'cdn' injected into index.html
-   window.UI5_ENVIRONMENT = 'cdn'
-
-🚀 Starting server...
-
-Starting up http-server, serving ./
-Available on:
-  http://127.0.0.1:8300
-  http://192.168.1.100:8300
-```
-
-### Eset 2: Port Foglalt (Saját Projekt)
-
-```
-🚀 Smart Start - CDN Mode
-   Port: 8300
-   Project: ui5-splash-screen-poc
-
-⚠️  Port 8300 is already in use (PID: 54321)
-✓  Process belongs to this project (ui5-splash-screen-poc)
-🔄 Killing existing process (PID: 54321)...
-✅ Process killed successfully
-
-⏳ Waiting for port to be released...
-✅ Port 8300 is now free
-
-🔧 Building for environment: cdn...
-✅ Environment 'cdn' injected into index.html
-
-🚀 Starting server...
-```
-
-### Eset 3: Port Foglalt (Más Projekt)
-
-```
-🚀 Smart Start - CDN Mode
-   Port: 8300
-   Project: ui5-splash-screen-poc
-
-⚠️  Port 8300 is already in use (PID: 99999)
-❌ Port 8300 is used by another application (PID: 99999)
-   This process does NOT belong to ui5-splash-screen-poc
-   Please stop it manually or use a different port:
-   PORT=9000 npm run smart-start:cdn
-```
-
----
-
-## 🛡️ Biztonsági Funkciók
-
-### 1. Projekt Védelem
-
-A script **NEM öli le** más projektek folyamatait:
+### 4. Szerver Inditas
 
 ```javascript
-// Ellenőrzi:
-if (cmdLine.includes('ui5-splash-screen-poc') ||
-    cmdLine.includes('http-server') ||
-    cmdLine.includes('ui5 serve')) {
-    // Biztonságos leölni
-} else {
-    // STOP! Más projekt folyamata
-    process.exit(1);
+const args = ['fiori', 'run', '--port', DEFAULT_PORT.toString(), '--open', 'index.html'];
+if (configFile) {
+    args.push('--config', configFile);
 }
-```
 
-### 2. Process Marker
-
-A szerver **environment változóval** van megjelölve:
-
-```javascript
-const server = spawn(command, args, {
+const server = spawn('npx', args, {
+    stdio: 'inherit',
     env: {
         ...process.env,
-        UI5_SPLASH_PROJECT: 'ui5-splash-screen-poc'  // ← Projekt ID
+        UI5_SPLASH_PROJECT: PROJECT_MARKER,
+        PORT: DEFAULT_PORT.toString()
     }
 });
 ```
 
-### 3. Várakozási Idő
+---
 
-Port felszabadítás után **max 3 másodperc** várakozás:
+## Kimenet Peldak
+
+### Eset 1: Port Szabad
+
+```
+Smart Start
+   Port: 8300
+   Project: ui5-splash-screen-poc
+
+Port 8300 is available
+
+Starting fiori run...
+
+info proxy /resources http://localhost:8300 -> local UI5 installation
+```
+
+### Eset 2: Port Foglalt (Sajat Projekt)
+
+```
+Smart Start
+   Port: 8300
+   Project: ui5-splash-screen-poc
+
+Port 8300 is already in use (PID: 54321)
+Process belongs to this project (ui5-splash-screen-poc)
+Killing existing process (PID: 54321)...
+Process killed successfully
+
+Waiting for port to be released...
+Port 8300 is now free
+
+Starting fiori run...
+```
+
+### Eset 3: Port Foglalt (Mas Projekt)
+
+```
+Smart Start
+   Port: 8300
+   Project: ui5-splash-screen-poc
+
+Port 8300 is already in use (PID: 99999)
+Port 8300 is used by another application (PID: 99999)
+   This process does NOT belong to ui5-splash-screen-poc
+   Please stop it manually or use a different port:
+   PORT=9000 npm run smart-start
+```
+
+---
+
+## Biztonsagi Funkciok
+
+### 1. Projekt Vedelem
+
+A script **NEM oli le** mas projektek folyamatait:
+
+```javascript
+// Ellenorzi:
+if (cmdLine.includes('ui5-splash-screen-poc') ||
+    cmdLine.includes('fiori') ||
+    cmdLine.includes('ui5 serve')) {
+    // Biztonsagos leolni
+} else {
+    // STOP! Mas projekt folyamata
+    process.exit(1);
+}
+```
+
+### 2. PORT Validacio
+
+```javascript
+const rawPort = process.env.PORT || '8300';
+const DEFAULT_PORT = parseInt(rawPort, 10);
+
+if (isNaN(DEFAULT_PORT) || DEFAULT_PORT < 1 || DEFAULT_PORT > 65535) {
+    console.error('Invalid PORT: ' + rawPort);
+    process.exit(1);
+}
+```
+
+Ez megakadalyozza a command injection-t (pl. `PORT="8300; rm -rf /" npm start`).
+
+### 3. Process Marker
+
+A szerver environment valtozoval van megjelolve:
+
+```javascript
+const server = spawn('npx', args, {
+    env: {
+        ...process.env,
+        UI5_SPLASH_PROJECT: 'ui5-splash-screen-poc'
+    }
+});
+```
+
+### 4. Varakozasi Ido
+
+Port felszabaditas utan **max 3 masodperc** varakozas:
 
 ```javascript
 const start = Date.now();
@@ -202,53 +266,53 @@ while (Date.now() - start < 3000) {
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
-### Probléma: "Failed to kill process"
+### Problema: "Failed to kill process"
 
-**Ok:** Nincs jogosultság a process leölésére
+**Ok:** Nincs jogosultsag a process leolesehez
 
-**Megoldás:**
+**Megoldas:**
 ```bash
 # macOS/Linux
-sudo npm run smart-start:cdn
+sudo npm run smart-start
 
 # Windows (Admin CMD)
-npm run smart-start:cdn
+npm run smart-start
 ```
 
-### Probléma: Port még mindig foglalt
+### Problema: Port meg mindig foglalt
 
-**Ok:** A process nem szabadult fel 3 másodpercen belül
+**Ok:** A process nem szabadult fel 3 masodpercen belul
 
-**Megoldás:**
+**Megoldas:**
 ```bash
-# Manuális leállítás
+# Manualis leallitas
 lsof -ti:8300 | xargs kill -9  # macOS/Linux
 taskkill /PID <PID> /F         # Windows
 
-# Vagy használj másik portot
-PORT=9000 npm run smart-start:cdn
+# Vagy hasznalj masik portot
+PORT=9000 npm run smart-start
 ```
 
-### Probléma: "Port is used by another application"
+### Problema: "Port is used by another application"
 
-**Ok:** A port-on futó process **NEM** ehhez a projekthez tartozik
+**Ok:** A port-on futo process **NEM** ehhez a projekthez tartozik
 
-**Megoldás:**
+**Megoldas:**
 
-**Opció 1** - Leállítod a másik folyamatot:
+**Opcio 1** - Leallitod a masik folyamatot:
 ```bash
 lsof -ti:8300  # Megkapod a PID-t
-kill -9 <PID>  # Leölöd
+kill -9 <PID>  # Leolod
 ```
 
-**Opció 2** - Másik portot használsz:
+**Opcio 2** - Masik portot hasznalsz:
 ```bash
-PORT=9000 npm run smart-start:cdn
+PORT=9000 npm run smart-start
 ```
 
-**Opció 3** - Megnézed, mi fut a porton:
+**Opcio 3** - Megnezed, mi fut a porton:
 ```bash
 # macOS/Linux
 lsof -i:8300
@@ -259,51 +323,60 @@ netstat -ano | findstr :8300
 
 ---
 
-## 🆚 Összehasonlítás
+## Osszehasonlitas
 
-| | Hagyományos Start | Smart Start |
+| | Hagyomanyos Start | Smart Start |
 |---|---|---|
-| **Port foglalt** | ❌ Hibaüzenet, manuális leállítás | ✅ Automatikus kezelés |
-| **Ismételt futtatás** | ❌ Újra hibát dob | ✅ Mindig indul |
-| **Más projekt védelme** | ⚠️ Nincs védelem | ✅ Biztonságos |
-| **Egyszerűség** | ❌ 3 lépés (find PID, kill, restart) | ✅ 1 parancs |
-| **Hibakezelés** | ❌ Nincs | ✅ Van (exit code, error msg) |
+| **Port foglalt** | Hibauzenet, manualis leallitas | Automatikus kezeles |
+| **Ismetelt futtatas** | Ujra hibat dob | Mindig indul |
+| **Mas projekt vedelme** | Nincs vedelem | Biztonsagos |
+| **Egyszeruseg** | 3 lepes (find PID, kill, restart) | 1 parancs |
+| **Hibakezelés** | Nincs | Van (exit code, error msg) |
 
 ---
 
-## 📝 Package.json Konfiguráció
+## Package.json Konfiguracio
 
 ```json
 {
   "scripts": {
-    "start": "npm run smart-start:cdn",
-    "smart-start:cdn": "node start.js cdn",
-    "smart-start:local": "node start.js local",
-    "smart-start:backend": "node start.js backend",
-    "smart-start:hybrid": "node start.js hybrid",
-
-    "start:cdn": "node build.js cdn && http-server -p ${PORT:-8300} --cors -o",
-    "start:local": "node build.js local && npx ui5 serve --port ${PORT:-8300} --open"
+    "start": "npx fiori run --port 8300 --open index.html",
+    "start:cdn": "npx fiori run --port 8300 --config ui5-cdn.yaml --open index.html",
+    "start:local": "npx fiori run --port 8300 --open index.html",
+    "start:backend": "npx fiori run --port 8300 --config ui5-backend.yaml --open index.html",
+    "smart-start": "node start.js",
+    "smart-start:cdn": "node start.js ui5-cdn.yaml",
+    "smart-start:local": "node start.js",
+    "smart-start:backend": "node start.js ui5-backend.yaml"
   }
 }
 ```
 
-**Magyarázat:**
-- `npm start` → Smart Start (default CDN)
-- `npm run start:cdn` → Manuális start (nincs port ellenőrzés)
-- `npm run smart-start:cdn` → Explicit Smart Start
+**Magyarazat:**
+- `npm start` -> Direkt fiori run (default ui5.yaml, local SAPUI5)
+- `npm run start:cdn` -> Direkt fiori run CDN konfiggal
+- `npm run smart-start` -> Smart Start (port cleanup + fiori run)
+- `npm run smart-start:cdn` -> Smart Start CDN konfiggal
+
+**Modok es YAML fajlok:**
+
+| Mod | YAML | Honnan jon a SAPUI5? |
+|-----|------|---------------------|
+| Local (default) | `ui5.yaml` | node_modules (framework section) |
+| CDN | `ui5-cdn.yaml` | fiori-tools-proxy -> sapui5.hana.ondemand.com |
+| Backend | `ui5-backend.yaml` | fiori-tools-proxy -> CDN + backend proxy |
 
 ---
 
-## 🎓 Fejlesztői Megjegyzések
+## Fejlesztoi Megjegyzesek
 
-### start.js Architektúra
+### start.js Architektura (v4.0)
 
 ```javascript
 main() {
-    1. getPortPID(8300) → PID vagy null
+    1. getPortPID(8300) -> PID vagy null
     2. if (PID exists) {
-        3. isProjectProcess(PID) → true/false
+        3. isProjectProcess(PID) -> true/false
         4. if (true) {
             5. killProcess(PID)
             6. wait 3s for port release
@@ -311,63 +384,68 @@ main() {
             7. error + exit
         }
     }
-    8. execSync('node build.js cdn')
-    9. spawn(server, { env: { UI5_SPLASH_PROJECT: '...' } })
+    8. spawn('npx', ['fiori', 'run', '--port', '8300', '--open', 'index.html', ...])
+       // Optional: '--config', configFile
 }
 ```
 
-### Cross-Platform Kompatibilitás
+> **v4.0 valtozas:** Nincs tobb `execSync('node build.js cdn')` lepes.
+> A build lepes megszunt, a start.js kozvetlenul a `fiori run`-t inditja.
+
+### Cross-Platform Kompatibilitas
 
 | Platform | Port Check | Process Info | Kill |
 |----------|-----------|--------------|------|
-| **macOS** | `lsof -ti:8300` | `ps -p <PID> -o command=` | `kill -9 <PID>` |
-| **Linux** | `lsof -ti:8300` | `ps -p <PID> -o command=` | `kill -9 <PID>` |
+| **macOS** | `lsof -ti:8300 -sTCP:LISTEN` | `ps -p <PID> -o command=` | `kill -9 <PID>` |
+| **Linux** | `lsof -ti:8300 -sTCP:LISTEN` | `ps -p <PID> -o command=` | `kill -9 <PID>` |
 | **Windows** | `netstat -ano \| findstr :8300` | `wmic process where "ProcessId=<PID>" get CommandLine` | `taskkill /PID <PID> /F` |
 
 ---
 
-## 🚦 Best Practices
+## Best Practices
 
-### 1. Használd az alapértelmezett npm start-ot
+### 1. Hasznald a smart-start-ot fejleszteskor
 
 ```bash
-# ✅ HELYES
-npm start
+# HELYES - port cleanup + szerver
+npm run smart-start
+npm run smart-start:cdn
 
-# ❌ KERÜLENDŐ (csak troubleshooting esetén)
+# KERULED - nincs port cleanup
+npm start
 npm run start:cdn
 ```
 
-### 2. Custom port csak dev környezetben
+### 2. Custom port csak dev kornyezetben
 
 ```bash
-# ✅ DEV környezetben
-PORT=9000 npm start
+# DEV kornyezetben
+PORT=9000 npm run smart-start
 
-# ❌ Prod környezetben (használd az alapértelmezett 8300-at)
+# Prod kornyezetben (hasznald az alapertelmezett 8300-at)
 ```
 
-### 3. VSCode launch.json integráció
+### 3. VSCode launch.json integracio
 
 ```json
 {
-    "name": "UI5 Splash - Smart Start (CDN)",
+    "name": "UI5 Splash - Smart Start (Local)",
     "type": "node",
     "request": "launch",
     "runtimeExecutable": "npm",
-    "runtimeArgs": ["run", "smart-start:cdn"],
+    "runtimeArgs": ["run", "smart-start"],
     "console": "integratedTerminal"
 }
 ```
 
 ---
 
-## 📚 Kapcsolódó Dokumentáció
+## Kapcsolodo Dokumentacio
 
-- [README.md](README.md) - Projekt áttekintés
-- [RUNBOOK.md](RUNBOOK.md) - Operációs útmutató
-- [CHANGELOG_v3.0.md](CHANGELOG_v3.0.md) - v3.0 változások
+- [README.md](README.md) - Projekt attekintes
+- [RUNBOOK.md](RUNBOOK.md) - Operacios utmutato
+- [PROJECT_STATUS.md](PROJECT_STATUS.md) - Projekt statusz
 
 ---
 
-**Smart Start - Egyszerűbb fejlesztés, kevesebb manuális munka!** 🚀
+**Smart Start - Egyszerubb fejlesztes, kevesebb manualis munka!**

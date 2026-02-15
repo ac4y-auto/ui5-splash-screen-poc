@@ -1,413 +1,260 @@
-# 🚀  CHEAT SHEET - UI5 Splash Screen POC
+# CHEAT SHEET - UI5 Splash Screen POC
 
-**Projekt-specifikus fontos információk** - Gyors referencia a munka során
-
----
-
-## 🎯 PROJEKT ALAPADATOK
-
-### Portok
-- **Dev szerver port**: `8300`
-- **URL**: http://localhost:8300
-- **Főoldal**: http://localhost:8300/index-configurable.html
-
-### UI5 Verzió
-- **Projekt verzió**: `1.105.0` ⭐ (manifest.json, minUI5Version)
-- **CDN verzió**: Latest (dinamikus, nincs version pinning)
-- **Local verzió**: 1.105.0 (NPM package + UI5 CLI)
-- **Theme**: `sap_horizon`
-- **CompatVersion**: `edge`
-
-### CDN Konfiguráció
-**Használt CDN** (latest):
-```
-https://sdk.openui5.org/resources/sap-ui-core.js
-```
-
-**⚠️ Nincs version pinning**: Az OpenUI5 SDK CDN nem támogatja az 1.105.0 specific URL-t
-
-**Előnyök**:
-- ✅ OpenUI5 hivatalos SDK
-- ✅ Ingyenes
-- ✅ Mindig elérhető
-- ✅ Fix 1.105.0 verzió (manifest.json-nal kompatibilis)
-- ✅ Production-ready
+**Gyors referencia a fiori run architekturához**
 
 ---
 
-## 🌍 HÁROM UI5 FORRÁS (HONNAN JÖN AZ UI5)
+## PROJEKT ALAPADATOK
 
-### 1. CDN Mode ☁️ (Alapértelmezett)
-**Honnan jön**: Internet CDN - OpenUI5Latest
-```
-http://localhost:8300/index-configurable.html?env=cdn
-```
-- **UI5 URL**: https://sdk.openui5.org/resources/sap-ui-core.js
-- **Verzió**: Latest (automatikus frissítés)
-- **Státusz**: ✅ Működik
-- **Előnyök**:
-  - Nincs telepítés
-  - Mindig legfrissebb verzió
-  - Gyors (CDN cache)
-  - Ingyenes
-  - Production-ready
-- **⚠️ Hátrány**: Nincs verzió kontroll (latest mindig változhat)
-
-### 2. Backend Mode 🖥️
-**Honnan jön**: Belső szerver (ABAP backend vagy custom server)
-```
-http://localhost:8300/index-configurable.html?env=backend
-```
-- **UI5 URL**: http://192.168.1.10:9000/resources/sap-ui-core.js
-- **Státusz**: ⏸️ Jelenleg offline (várható)
-- **Előnyök**:
-  - Offline működés
-  - Vállalati verzió kontroll
-  - Testreszabott UI5
-  - Saját biztonsági szabályok
-
-### 3. Local Mode 💻 (node_modules)
-**Honnan jön**: Saját gépről - node_modules (UI5 CLI built libraries)
-```
-http://localhost:8300/index-configurable.html?env=local
-```
-- **UI5 URL**: ./node_modules/@openui5/sap.ui.core/src/sap-ui-core.js
-- **Verzió**: 1.105.0 (telepített NPM package)
-- **Státusz**: ⚠️ UI5 CLI szükséges (telepítve: @ui5/cli)
-- **Működés**: UI5 CLI serve automatikusan szolgálja a built library-kat
-- **Előnyök**:
-  - Valóban offline (node_modules-ból)
-  - UI5 CLI automatikus build
-  - Fix verzió (1.105.0)
-  - Fejlesztéshez ideális
-
-### 🎯 Összefoglaló Táblázat
-
-| Mód | Forrás | Hálózat | Verzió | Státusz |
-|-----|--------|---------|--------|---------|
-| **CDN** | Internet CDN | Kell | Latest | ✅ Működik |
-| **Backend** | 192.168.1.10:9000 | LAN | ? | ⏸️ Offline |
-| **Local** | node_modules | Nem kell | 1.105.0 ⭐ | ⚠️ UI5 CLI kell |
+| Tulajdonsag | Ertek |
+|-------------|-------|
+| **Port** | `8300` |
+| **URL** | http://localhost:8300/index.html |
+| **SAPUI5 verzio** | `1.105.0` |
+| **Theme** | `sap_horizon` |
+| **CompatVersion** | `edge` |
+| **UI5 library** | **SAPUI5 ONLY** (OpenUI5 TILOS!) |
+| **Szerver** | `fiori run` (@sap/ux-ui5-tooling) |
+| **GitHub** | https://github.com/ac4y-auto/ui5-splash-screen-poc |
 
 ---
 
-## 📦 NPM PARANCSOK
+## 3 UZZEMMOD (YAML konfigok)
 
+| Mod | YAML fajl | SAPUI5 forras | Proxy | Halozat |
+|-----|-----------|---------------|-------|---------|
+| **Local** (default) | `ui5.yaml` | UI5 CLI framework (node_modules) | Nincs | Nem kell |
+| **CDN** | `ui5-cdn.yaml` | sapui5.hana.ondemand.com via proxy | fiori-tools-proxy | Internet |
+| **Backend** | `ui5-backend.yaml` | CDN + backend 192.168.1.10:9000 | fiori-tools-proxy | Internet + LAN |
+
+**Fontos**: Az `index.html` mindig ugyanaz. A mod a YAML konfiggal van meghatarozva szerver inditaskor.
+
+---
+
+## NPM PARANCSOK
+
+### Kozvetlen fiori run parancsok
+
+| Parancs | Mod | Leiras |
+|---------|-----|--------|
+| `npm start` | Local | Alapertelmezett, ui5.yaml |
+| `npm run start:local` | Local | Explicit local mod |
+| `npm run start:cdn` | CDN | ui5-cdn.yaml, SAPUI5 CDN proxy |
+| `npm run start:backend` | Backend | ui5-backend.yaml, CDN + backend proxy |
+
+### Smart Start parancsok (port-kezeles + fiori run)
+
+| Parancs | Mod | Leiras |
+|---------|-----|--------|
+| `npm run smart-start` | Local | Port ellenorzes + auto-kill + start |
+| `npm run smart-start:local` | Local | Explicit local |
+| `npm run smart-start:cdn` | CDN | Port ellenorzes + CDN mod |
+| `npm run smart-start:backend` | Backend | Port ellenorzes + backend mod |
+
+### Egyeb
 ```bash
-# Szerver indítás
-npm start                  # CDN mode
-npm run start:cdn          # CDN mode explicit
-npm run start:backend      # Backend mode
-npm run start:local        # Local mode
-
-# Függőségek telepítése
-npm install
-
-# Függőségek ellenőrzése
-npm list
+npm install                    # Fuggosegek telepitese
+npm list                       # Fuggosegek ellenorzese
 ```
 
 ---
 
-## 🔧 SZERVER MŰVELETEK
+## FONTOS FAJLOK
 
-### Szerver indítás
-```bash
-npm start
-# Vagy
-npx http-server -p 8300
-```
+### Alkalmazas
+| Fajl | Leiras |
+|------|--------|
+| `index.html` | Fo HTML (statikus, SAPUI5 bootstrap + splash screen) |
+| `splash-screen.css` | Splash screen stilusok |
+| `splash-screen.js` | Splash screen logika |
+| `ui5-error-handler.js` | SAPUI5 betoltesi hiba overlay (timeout 15s + script error) |
+| `Component.js` | UI5 Component |
+| `manifest.json` | UI5 app manifest (minUI5Version: 1.105.0) |
+| `view/App.view.xml` | Fo nezet |
+| `controller/App.controller.js` | Fo controller |
 
-### Port ellenőrzés
-```bash
-netstat -ano | findstr :8300
-```
+### Konfiguracio
+| Fajl | Leiras |
+|------|--------|
+| `ui5.yaml` | Local mod (default) - SAPUI5 framework, nincs proxy |
+| `ui5-cdn.yaml` | CDN mod - fiori-tools-proxy a sapui5.hana.ondemand.com-rol |
+| `ui5-backend.yaml` | Backend mod - CDN + backend proxy (192.168.1.10:9000) |
+| `package.json` | NPM konfiguracio, script-ek |
+| `start.js` | Smart Start script (port ellenorzes + auto-kill) |
 
-### Szerver leállítás
-```bash
-# PID megtalálása után
-cmd //c "taskkill /PID [PID] /F"
-```
-
-### Háttérben futó task leállítás
-```bash
-# Ha task ID-vel fut (pl. b079a0d)
-# TaskStop tool használata vagy
-# PID alapján kill
-```
+### Splash Screen eszkozok
+| Fajl | Meret |
+|------|-------|
+| `splash-video.mp4` | ~908 KB |
+| `splash-poster.jpeg` | ~25 KB |
 
 ---
 
-## 🎬 SPLASH SCREEN BEÁLLÍTÁSOK
+## SPLASH SCREEN BEALLITASOK
 
-### Videó Fájlok
-- **Videó**: `splash-video.mp4` (908KB)
-- **Poster**: `splash-poster.jpeg` (25KB)
-
-### Időzítés
+### Video Sebesseg
 ```javascript
-// index-configurable.html, sor ~135
-setTimeout(function() {
-    splash.classList.add('fade-out');
-}, 500); // <- 500ms delay UI5 betöltés után
-```
-
-### Videó Sebesség
-```javascript
-// index-configurable.html, sor ~80
+// splash-screen.js
 video.playbackRate = 0.2; // 5x lassabb (0.2 = 20%)
 ```
 
-### Fade-out Animáció
+### Fade-out Animacio
 ```css
-/* index-configurable.html, sor ~24 */
+/* splash-screen.css */
 transition: opacity 0.5s ease-out; /* 500ms fade */
 ```
 
-### Videó Méret
+### Video Meret
 ```css
-/* index-configurable.html, sor ~32-35 */
+/* splash-screen.css */
 #splash-video {
-    width: 80%;   /* Képernyő 80%-a */
+    width: 80%;
     height: 80%;
     object-fit: contain;
 }
 ```
 
----
-
-## 🔐 GIT & GITHUB
-
-### Repository
-- **GitHub URL**: https://github.com/ac4y-auto/ui5-splash-screen-poc
-- **User**: ac4y-auto
-- **Organization**: ac4y-auto
-- **Branch**: main
-- **Remote**: origin
-
-### Git Alapok
-```bash
-# Státusz
-git status
-
-# Add + Commit
-git add .
-git commit -m "feat: Your message
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
-
-# Push
-git push origin main
-
-# Pull
-git pull origin main
-
-# Log
-git log --oneline -10
+### Error Handler Timeout
+```javascript
+// ui5-error-handler.js
+var LOAD_TIMEOUT_MS = 15000; // 15 masodperc utan error overlay
 ```
 
-### Commit Típusok
-- `feat:` - Új funkció
-- `fix:` - Bugfix
-- `docs:` - Dokumentáció
-- `refactor:` - Kód átszervezés
-- `test:` - Tesztek
-- `chore:` - Build, dependencies
-- `style:` - Formázás
-
 ---
 
-## 📁 FONTOS FÁJLOK
+## GYORS HIBAALHARITAS
 
-### Főbb HTML fájlok
-- `index-configurable.html` - **🌟 Fő alkalmazás** (40 sor, modular, multi-env)
-- `index-minimal.html` - **ÚJ!** Minimális példa (jól kommentált)
-- `index.html` - CDN verzió (legacy, monolithic)
-- `index-demo.html` - Demo verzió (CSS animáció)
-
-### Splash Screen Modulok (v2.0 - ÚJ!)
-- `splash-screen.css` - Splash stílusok (1.4 KB)
-- `splash-screen.js` - Splash logika (3.7 KB)
-- `ui5-bootstrap.js` - Dinamikus UI5 betöltés (1.9 KB)
-
-### Konfiguráció
-- `config.js` - Környezeti beállítások (CDN/Local/Backend URL-ek)
-- `manifest.json` - UI5 app manifest
-- `package.json` - NPM konfiguráció
-
-### UI5 Fájlok
-- `Component.js` - UI5 Component
-- `view/App.view.xml` - View
-- `controller/App.controller.js` - Controller
-
-### Dokumentáció
-- `README.md` - Használati útmutató
-- `KONZEPCIÓ.md` - Architektúra (432 sor)
-- `FEJLESZTOI_UTASITAS.md` - Integráció
-- `INTEGRATION_PLAN.md` - WMS integrációs terv
-- `REFACTORING_NOTES.md` - **ÚJ!** v2.0 refactoring részletek
-- `SESSION_HANDOFF.md` - Session handoff
-- `RUNBOOK.md` - Működési útmutató
-- `CHEAT_SHEET.md` - Ez a fájl
-
----
-
-## 🛠️ GYORS HIBAELHÁRÍTÁS
-
-### "Port already in use"
+### Port foglalt
 ```bash
-netstat -ano | findstr :8300
-cmd //c "taskkill /PID [PID] /F"
+# Smart start (automatikus port-kezeles):
+npm run smart-start
+
+# Manualis:
+lsof -ti:8300
+kill -9 $(lsof -ti:8300)
 npm start
 ```
 
-### "UI5 nem tölt be"
-1. Ellenőrizd a Network tab-ot (F12)
-2. CDN elérhető-e: https://sdk.openui5.org/resources/sap-ui-core.js
+### UI5 nem tolt be
+1. Network tab (F12): `resources/sap-ui-core.js` betoltodik-e?
+2. Fut-e a `fiori run` szerver?
 3. Console error-ok
-4. Hard reload: Ctrl+Shift+R
+4. Probald mas moddal: `npm run start:cdn`
+5. Hard reload: Cmd+Shift+R
 
-### "Backend not reachable"
-- Normális, ha 192.168.1.10:9000 offline
-- Használd CDN mode-ot helyette
+### Error overlay megjelenik
+- Az `ui5-error-handler.js` 15 mp utan mutatja ha SAPUI5 nem toltodott be
+- Ellenorizd a szerver futasat es a Network tab-ot
 
-### "Splash screen nem jelenik meg"
-1. Ellenőrizd: splash-video.mp4 létezik
-2. Ellenőrizd: splash-poster.jpeg létezik
-3. Browser console hibák
-4. Cache törlés
+### Backend nem elerheto
+- Normalis, ha 192.168.1.10:9000 offline
+- Hasznald Local (`npm start`) vagy CDN (`npm run start:cdn`) modot
+
+### fiori run nem indul
+```bash
+npm list @sap/ux-ui5-tooling    # Telepitve van?
+npm install                      # Ujratelepites
+npm start                        # Ujra probalkozas
+```
+
+### i18n 404 error-ok
+- Nem kritikus, i18n fajlok opcionalisak
 
 ---
 
-## 🎨 CONFIG.JS MÓDOSÍTÁS
+## TESZTELESI URL-EK
 
-### Backend URL változtatás
-```javascript
-// config.js
-backend: {
-    name: 'Backend Server',
-    url: 'http://YOUR_IP:YOUR_PORT/resources/sap-ui-core.js',
-    description: 'Uses UI5 from custom backend server'
-}
+Minden mod ugyanazt az URL-t hasznalja:
 ```
-
-### CDN verzió rögzítése
-```javascript
-// config.js
-cdn: {
-    name: 'CDN (OpenUI5 SDK)',
-    url: 'https://sdk.openui5.org/1.120.2/resources/sap-ui-core.js', // <- Konkrét verzió
-    description: 'Uses OpenUI5 1.120.2 from official CDN'
-}
-```
-
----
-
-## 🧪 TESZTELÉSI URL-EK
-
-### CDN
-```
-http://localhost:8300/index-configurable.html?env=cdn
 http://localhost:8300/index.html
 ```
 
-### Backend
-```
-http://localhost:8300/index-configurable.html?env=backend
-```
+A kulonbseg a szerver inditasi parancsaban van (melyik YAML-t hasznalja).
 
-### Local
-```
-http://localhost:8300/index-configurable.html?env=local
-```
-
-### Demo (CSS animáció)
-```
-http://localhost:8300/index-demo.html
-```
-
----
-
-## 📊 PROJEKT STÁTUSZ
-
-### Commitok (Jelenlegi: 3)
-1. `f3ba0ff` - Initial commit
-2. `98446df` - Multi-environment support
-3. `50c5a2d` - Splash screen timing fix (120s → 500ms)
-
-### Telepített NPM Packages
-```json
-{
-  "devDependencies": {
-    "cross-env": "^7.0.3",
-    "http-server": "^14.1.1"
-  }
-}
-```
-
-### Node.js
-- Verzió: v20.20.0
-
----
-
-## 💡 GYORS TIPPEK
-
-### LocalStorage ellenőrzés
+### Ellenorzesek bongeszobe (F12 Console):
 ```javascript
-// Browser Console
-localStorage.getItem('ui5_env')  // Aktuális env
-localStorage.setItem('ui5_env', 'backend')  // Env váltás
-localStorage.clear()  // Összes törlése
-```
-
-### UI5 verzió lekérdezés runtime-ban
-```javascript
-// Browser Console (UI5 betöltés után)
+// UI5 verzio lekerdezes
 sap.ui.version
-```
 
-### Environment info
-```javascript
-// Browser Console
-console.log('Current env:', getCurrentEnv());
-console.log('Bootstrap URL:', getUI5BootstrapUrl());
-```
+// UI5 betoltodott-e
+typeof sap !== 'undefined'
 
-### Splash screen manual trigger
-```javascript
-// Browser Console
+// Splash screen manual trigger
 document.getElementById('splash-screen').classList.remove('fade-out');
 ```
 
 ---
 
-## 🔍 HASZNOS LINKEK
+## SAPUI5 ELLENORZES
 
-- **OpenUI5 SDK**: https://sdk.openui5.org/
-- **OpenUI5 GitHub**: https://github.com/SAP/openui5
-- **OpenUI5 Docs**: https://sdk.openui5.org/documentation
-- **Project GitHub**: https://github.com/ac4y-auto/ui5-splash-screen-poc
+```bash
+# YAML-ok ellenorzese (SAPUI5 kell, NEM OpenUI5!)
+grep "sapui5.hana.ondemand.com" ui5-cdn.yaml ui5-backend.yaml
+grep "name: SAPUI5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml
+
+# OpenUI5 keresese (URESNEK kell lennie!)
+grep -ri "openui5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml index.html
+```
 
 ---
 
-## ⚡ GYORS START
+## DEVDEPENDENCIES
+
+```json
+{
+  "devDependencies": {
+    "@sap/ux-ui5-tooling": "^1.20.2",
+    "@ui5/cli": "^4.0.43"
+  }
+}
+```
+
+Nincs tobb: `http-server`, `cross-env`, `ui5-middleware-simpleproxy`.
+
+---
+
+## GIT
 
 ```bash
-# 1. Project directory
-cd C:\work\ui5\ui5-splash-screen-poc
+git status
+git add .
+git commit -m "feat: Description
 
-# 2. Start server
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
+git push origin main
+git log --oneline -10
+```
+
+---
+
+## GYORS START
+
+```bash
+# 1. Projekt konyvtar
+cd /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc
+
+# 2. Szerver inditas (Local mod, alapertelmezett)
 npm start
 
-# 3. Open browser
-# http://localhost:8300/index-configurable.html
+# 3. Bongeszo megnyilik automatikusan:
+#    http://localhost:8300/index.html
 
-# 4. Git check
+# 4. Git ellenorzes
 git status
 ```
 
 ---
 
-**Utolsó frissítés**: 2026-02-12 17:30
-**Verzió**: 2.0 ✨ (Modular Architecture)
-**Állapot**: ✅ Production Ready (CDN mode tested)
+## HASZNOS LINKEK
+
+- **SAPUI5 SDK**: https://sapui5.hana.ondemand.com/
+- **SAPUI5 Documentation**: https://sapui5.hana.ondemand.com/#/topic
+- **SAP Fiori Tools**: https://www.npmjs.com/package/@sap/ux-ui5-tooling
+- **UI5 CLI**: https://sap.github.io/ui5-tooling/
+- **Project GitHub**: https://github.com/ac4y-auto/ui5-splash-screen-poc
+
+---
+
+**Utolso frissites**: 2026-02-15
+**Verzio**: 3.0 (fiori run architektura)
+**Allapot**: Production Ready

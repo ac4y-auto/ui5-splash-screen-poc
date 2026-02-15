@@ -1,69 +1,77 @@
-# Just Run It! 🚀
+# Just Run It!
 
-## Előfeltétel
+## Elofeltetel
 
 ```bash
 npm install
 ```
 
-## Gyors Indítás
+## Gyors Inditas
 
-### Smart Start (ajánlott)
+### Smart Start (ajanlott)
 
-| Parancs | Leírás | Port |
-|---------|--------|------|
-| `npm start` | Smart Start CDN (alapértelmezett) | 8300 |
-| `npm run smart-start:cdn` | Smart Start CDN | 8300 |
-| `npm run smart-start:local` | Smart Start Local | 8300 |
-| `npm run smart-start:backend` | Smart Start Backend | 8300 |
-| `npm run smart-start:hybrid` | Smart Start Hybrid | 8300 |
+| Parancs | Leiras | Mod | Port |
+|---------|--------|-----|------|
+| `npm run smart-start` | Smart Start Local (alapertelmezett) | Local | 8300 |
+| `npm run smart-start:local` | Smart Start Local | Local | 8300 |
+| `npm run smart-start:cdn` | Smart Start CDN | CDN proxy | 8300 |
+| `npm run smart-start:backend` | Smart Start Backend | CDN + Backend proxy | 8300 |
 
-### Manuális (haladó)
+### Manualis (halado)
 
-| Parancs | Leírás | Port |
-|---------|--------|------|
-| `npm run start:cdn` | CDN mód (build + serve) | 8300 |
-| `npm run start:local` | Local mód (UI5 CLI) | 8300 |
-| `npm run start:backend` | Backend mód (direct) | 8300 |
-| `npm run start:hybrid` | Hybrid mód (proxy) | 8300 |
+| Parancs | Leiras | Mod | Port |
+|---------|--------|-----|------|
+| `npm start` | Local mod (alapertelmezett) | Local | 8300 |
+| `npm run start:local` | Local mod | Local | 8300 |
+| `npm run start:cdn` | CDN proxy mod | CDN proxy | 8300 |
+| `npm run start:backend` | CDN + Backend proxy mod | CDN + Backend proxy | 8300 |
 
-## Melyiket használjam?
+## Melyiket hasznaljam?
 
-- **Gyors teszt kell?** → `npm start` (Smart Start CDN)
-- **Nincs internet?** → `npm run smart-start:local`
-- **Van backend szerver?** → `npm run smart-start:hybrid` (`.env` beállítás után)
-- **Backend nélkül tesztelni a hibakezelést?** → `npm run smart-start:backend` (error overlay jelenik meg)
-- **Port foglalt hiba?** → Bármelyik `smart-start:*` automatikusan kezeli!
+- **Gyors teszt kell?** --> `npm start` (Local mod, nincs internet szukseges)
+- **SAP CDN-rol akarok tolteni?** --> `npm run smart-start:cdn`
+- **Van backend szerver (192.168.1.10:9000)?** --> `npm run smart-start:backend`
+- **Port foglalt hiba?** --> Barmelyik `smart-start:*` automatikusan kezeli!
 
-## Smart Start vs Manuális
+## 3 Uzemeltetesi Mod
 
-**Smart Start** (`npm start` / `npm run smart-start:*`):
-- ✅ Automatikusan leöli a futó szervert, ha port foglalt
-- ✅ Csak projekthez tartozó processt öli le (biztonságos)
-- ✅ Build + Szerver egy parancsban
-- ✅ Ajánlott mindennapi használatra
-- ✅ Minden módhoz elérhető: `smart-start:cdn`, `smart-start:local`, `smart-start:backend`, `smart-start:hybrid`
+### Local (alapertelmezett)
 
-**Manuális** (`npm run start:cdn` stb.):
-- ⚠️ NEM kezeli a port konfliktusokat
-- ⚠️ Manuálisan kell leállítani a futó szervert
-- ✅ Gyorsabb (nincs port check)
-- ✅ Troubleshooting esetén hasznos
+- **Konfiguracio**: `ui5.yaml` (nincs `--config` flag)
+- **SAPUI5 forras**: a `@ui5/cli` framework szolgalja ki (SAPUI5 1.105.0)
+- **Internet szukseges**: Nem
+- **Mikor hasznald**: Alapertelmezett fejlesztes, offline munka
 
-## Hybrid Mód Beállítása
+### CDN
 
-```bash
-# 1. Másold a példa .env fájlt
-cp .env.example .env
+- **Konfiguracio**: `ui5-cdn.yaml`
+- **SAPUI5 forras**: `fiori-tools-proxy` --> `https://sapui5.hana.ondemand.com`
+- **Internet szukseges**: Igen
+- **Mikor hasznald**: Ha a legfrissebb CDN verziot akarod hasznalni
 
-# 2. Szerkeszd a .env fájlt
-# UI5_MIDDLEWARE_SIMPLE_PROXY_BASEURI=http://192.168.1.10:9000
+### Backend
 
-# 3. Indítsd a hybrid módot
-npm run smart-start:hybrid
-```
+- **Konfiguracio**: `ui5-backend.yaml`
+- **SAPUI5 forras**: CDN proxy (mint CDN mod) + backend proxy (`/sap` --> `http://192.168.1.10:9000`)
+- **Internet szukseges**: Igen + elerheto backend szerver
+- **Mikor hasznald**: Ha backend szerverre is szukseged van (OData, stb.)
 
-## Custom Port Használat
+## Smart Start vs Manualis
+
+**Smart Start** (`npm run smart-start` / `npm run smart-start:*`):
+- Ellenorzi, hogy a port (8300) foglalt-e
+- Csak projekthez tartozo processt oli le (biztonsagos)
+- `fiori run` inditas egy parancsban
+- Ajanlott mindennapi hasznalatra
+- Elerheto: `smart-start`, `smart-start:cdn`, `smart-start:local`, `smart-start:backend`
+
+**Manualis** (`npm start` / `npm run start:*`):
+- NEM kezeli a port konfliktusokat
+- Manualisan kell leallitani a futo szervert
+- Gyorsabb (nincs port check)
+- Troubleshooting eseten hasznos
+
+## Custom Port Hasznalat
 
 ```bash
 # Default port: 8300
@@ -71,10 +79,10 @@ npm start
 
 # Custom port
 PORT=9000 npm start
-PORT=8080 npm run start:local
+PORT=8080 npm run start:cdn
 ```
 
-**Megjegyzés**: Windows CMD/PowerShell-ben más szintaxis kell:
+**Megjegyzes**: Windows CMD/PowerShell-ben mas szintaxis kell:
 ```cmd
 REM Windows CMD
 set PORT=9000 && npm start
@@ -83,34 +91,33 @@ REM PowerShell
 $Env:PORT=9000; npm start
 ```
 
-## SAPUI5 Verzió
+## SAPUI5 Verzio
 
-**Aktuális**: Latest (rolling release)
+**Aktualis**: 1.105.0 (a YAML fajlokban konfiguralhato)
 **CDN**: `https://sapui5.hana.ondemand.com/resources/sap-ui-core.js`
 
-⚠️ **Fontos**: Csak SAPUI5 használható! OpenUI5 TILOS!
+**FONTOS**: Csak SAPUI5 hasznalhato! OpenUI5 TILOS!
 
-## Ellenőrzés Böngészőben
+## Ellenorzes Bongeszben
 
-1. Nyisd meg: `http://localhost:8300/`
-2. F12 → Console → Ellenőrizd:
-   ```javascript
-   window.UI5_ENVIRONMENT  // → 'cdn', 'local', 'backend', 'hybrid'
-   window.SplashScreen     // → object (ha elérhető)
+1. Nyisd meg: `http://localhost:8300/index.html`
+2. F12 --> Console --> Ellenorizd:
    ```
-3. **Sikeres betöltés** (CDN/local/hybrid): Splash screen megjelenik videóval → UI5 app betöltődik → Splash fade-out
-4. **Sikertelen betöltés** (backend elérhető szerver nélkül): Splash → Error overlay ("UI5 Betöltési Hiba") → Technikai részletek + megoldási javaslatok
+   [UI5] SAPUI5 script loaded successfully
+   ```
+3. **Sikeres betoltes**: Splash screen megjelenik videoval --> UI5 app betoltodik --> Splash fade-out
+4. **Sikertelen betoltes**: Splash --> Error overlay ("UI5 Betoltesi Hiba") --> Technikai reszletek + megoldasi javaslatok
 
-## Hibaelhárítás
+## Hibaelharitas
 
 ### "Port 8300 is already in use"
 
-**Megoldás 1 (Ajánlott)**:
+**Megoldas 1 (Ajanlott)**:
 ```bash
-npm start  # Smart Start automatikusan kezeli
+npm run smart-start  # Smart Start automatikusan kezeli
 ```
 
-**Megoldás 2 (Manuális)**:
+**Megoldas 2 (Manualis)**:
 ```bash
 # macOS/Linux
 lsof -ti:8300 | xargs kill -9
@@ -120,31 +127,45 @@ netstat -ano | findstr :8300
 taskkill /PID <PID> /F
 ```
 
-### "http-server: command not found"
+### "fiori: command not found"
 
 ```bash
-npm install  # Telepítsd a dependencies-eket
+npm install  # Telepitsd a devDependencies-eket (@sap/ux-ui5-tooling)
 ```
 
-### "Failed to load UI5 from CDN"
+### UI5 nem toltodik be (Error Overlay)
+
+Az error overlay 2 esetben jelenik meg:
+1. **Timeout** (15 mp): a SAPUI5 nem toltodott be idoben
+2. **Script error**: a `sap-ui-core.js` halozati hiba vagy nem elerheto
+
+Megoldas:
+- Ellenorizd, hogy a `fiori run` szerver fut-e
+- Local mod (`npm start`): futtasd ujra `npm install`
+- CDN mod: ellenorizd az internet kapcsolatot es a `sapui5.hana.ondemand.com` eleresehetoseget
+- Backend mod: ellenorizd, hogy a backend szerver elerheto-e a `http://192.168.1.10:9000` cimen
+
+### YAML konfiguracios hiba
 
 ```bash
-# Ellenőrizd a config.js-t
-grep "sapui5.hana.ondemand.com" config.js
-
-# Ha OpenUI5-öt találsz, javítsd SAPUI5-re!
+# Ellenorizd a YAML szintaxist
+cat ui5.yaml
+cat ui5-cdn.yaml
+cat ui5-backend.yaml
 ```
 
-## Szerver Leállítás
+A YAML fajlok `specVersion: "3.0"` formatumban vannak. A `fiori-tools-proxy` middleware konfiguracio a `server.customMiddleware` szekcioban talalhato.
+
+## Szerver Leallitas
 
 ```bash
-# Ctrl+C a futó terminálban
+# Ctrl+C a futo terminalban
 
-# Vagy manuális kill
+# Vagy manualis kill
 lsof -ti:8300 | xargs kill -9  # macOS/Linux
 taskkill /PID <PID> /F         # Windows
 ```
 
 ---
 
-**Pro Tip**: Használd a Smart Start-ot (`npm start`) minden napi indításhoz - automatikusan kezeli a port konfliktusokat! 🚀
+**Pro Tip**: Hasznald a Smart Start-ot (`npm run smart-start`) minden napi inditashoz - automatikusan kezeli a port konfliktusokat!

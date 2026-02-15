@@ -1,159 +1,184 @@
 # Error Handling - UI5 Load Failure
 
-## Dokumentum Célja
+## Dokumentum Celja
 
-Ez a dokumentum leírja hogyan kezeli a modul az **UI5 betöltési hibákat** és milyen user feedback-et ad sikertelen betöltés esetén.
+Ez a dokumentum leirja hogyan kezeli a modul az **UI5 betoltesi hibakat** es milyen user feedback-et ad sikertelen betoltes eseten.
 
-**Verzió:** v3.2
-**Implementálva:** 2026-02-15
+**Verzio:** v4.0
+**Implementalva:** 2026-02-15
 
 ---
 
-## Probléma Leírása
+## Problema Leirasa
 
-### Mielőtt (v3.1)
+### Mielott (v3.1)
 
 ```
-User Experience SIKERTELEN betöltéskor:
-1. Splash screen látszik (video lejátszás)
+User Experience SIKERTELEN betolteskor:
+1. Splash screen latszik (video lejatszas)
 2. Alert popup: "Failed to load UI5 from..."
 3. User OK-ra kattint
-4. Splash TOVÁBBRA IS LÁTSZIK ❌
-5. ... 10 másodperc várakozás ...
-6. Splash eltűnik (timeout)
-7. Üres oldal + console error ❌
+4. Splash TOVABBRA IS LATSZIK
+5. ... 10 masodperc varakozas ...
+6. Splash eltunik (timeout)
+7. Ures oldal + console error
 ```
 
-**Probléma:**
-- ❌ Rossz UX: User tudja hogy hiba van, de splash tovább megy
-- ❌ 10 másodperc felesleges várakozás
-- ❌ Nincs vizuális feedback mi a hiba
-- ❌ Nincs actionable javaslat
+**Problema:**
+- Rossz UX: User tudja hogy hiba van, de splash tovabb megy
+- 10 masodperc felesleges varakozas
+- Nincs vizualis feedback mi a hiba
+- Nincs actionable javaslat
 
 ---
 
-## Megoldás: Error Overlay (v3.2)
+## Megoldas: Error Overlay (v4.0)
 
-### Új Flow
+### Uj Flow
 
 ```
-User Experience SIKERTELEN betöltéskor:
-1. Splash screen látszik (video lejátszás)
-2. UI5 betöltés FAIL
-3. Splash AZONNAL ELTŰNIK ✅
-4. Error Overlay MEGJELENIK ✅
-   - Vizuális feedback (⚠️ icon + piros border)
-   - Hiba leírás magyarul
-   - Forrás megjelenítése (CDN URL)
-   - Akciógombok (Újratöltés, Konfig megtekintése)
-   - Technikai részletek (expandable)
-   - Megoldási javaslatok
-5. User tud akciókat végrehajtani ✅
+User Experience SIKERTELEN betolteskor:
+1. Splash screen latszik (video lejatszas)
+2. UI5 betoltes FAIL (script error VAGY 15s timeout)
+3. Splash AZONNAL ELTUNIK
+4. Error Overlay MEGJELENIK
+   - Vizualis feedback (warning icon + piros border)
+   - Hiba leiras magyarul
+   - Forras megjelenitese (resources/sap-ui-core.js URL)
+   - Akciogombok (Ujratoltes)
+   - Technikai reszletek (expandable)
+   - Megoldasi javaslatok
+5. User tud akciokat vegrehajtani
 ```
 
 ---
 
 ## Komponensek
 
-### 1. Error Detection (ui5-bootstrap.js)
+### 1. Error Detection (ui5-error-handler.js)
+
+Az error detection a `ui5-error-handler.js` fajlban van implementalva. Ket mechanizmussal detektalja a hibat:
+
+**A) Script error event** - azonnali hiba (404, halozati hiba):
 
 ```javascript
-// script.onerror event
-script.onerror = function() {
-    console.error('[UI5 Bootstrap] Failed to load UI5 from:', config.url);
+var bootstrapScript = document.getElementById('sap-ui-bootstrap');
 
-    // 1. Jelzés: Error flag beállítása
-    window.UI5_LOAD_ERROR = true;
+bootstrapScript.addEventListener('error', function() {
+    clearTimeout(loadTimeout);
+    onLoadError('A SAPUI5 library nem toltodott be (halozati hiba vagy nem elerheto forras).');
+});
+```
 
-    // 2. Splash azonnali eltüntetése
+**B) 15 masodperces timeout** - ha UI5 nem toltodik be ido alatt:
+
+```javascript
+var LOAD_TIMEOUT_MS = 15000; // 15 seconds
+
+var loadTimeout = setTimeout(function() {
+    if (typeof sap === 'undefined') {
+        onLoadError('A SAPUI5 library nem toltodott be az elvart idon belul (15 mp).');
+    }
+}, LOAD_TIMEOUT_MS);
+```
+
+**C) Load success** - timeout torles sikeres betoltes utan:
+
+```javascript
+bootstrapScript.addEventListener('load', function() {
+    clearTimeout(loadTimeout);
+    console.log('[UI5] SAPUI5 script loaded successfully');
+});
+```
+
+### 2. Error Handler (ui5-error-handler.js)
+
+```javascript
+function onLoadError(message) {
+    console.error('[UI5] ' + message);
+
+    // 1. Splash azonnali eltuntetese
     if (window.SplashScreen && window.SplashScreen.hide) {
         window.SplashScreen.hide(0); // 0 delay = immediate
     }
 
-    // 3. Error overlay megjelenítése
+    // 2. Error overlay megjelenitese
     showErrorOverlay({
-        title: 'UI5 Betöltési Hiba',
-        message: 'Az UI5 library nem töltődött be...',
-        source: config.url,
-        environment: config.name,
-        technicalDetails: { ... }
+        title: 'UI5 Betoltesi Hiba',
+        message: message,
+        source: bootstrapScript.src,
+        technicalDetails: {
+            url: bootstrapScript.src,
+            error: message
+        }
     });
-};
+}
 ```
 
-### 2. Splash Screen Error Handling (splash-screen.js)
+### 3. Splash Screen Error Handling (splash-screen.js)
 
 ```javascript
-// Polling loop módosítás
-var checkUI5Interval = setInterval(function() {
-    // Ellenőrzés: Van error?
-    if (window.UI5_LOAD_ERROR) {
-        clearInterval(checkUI5Interval);
-        console.error('[Splash] UI5 load error detected, stopping poller');
-        return; // MEGÁLL, nem próbálja tovább
-    }
-
-    // Normál UI5 check...
-}, 100);
-
-// Timeout módosítás
-setTimeout(function() {
-    clearInterval(checkUI5Interval);
-
-    // Ha error overlay már megjelent, ne csináljunk semmit
-    if (window.UI5_LOAD_ERROR) {
-        console.log('[Splash] Timeout but error overlay shown, skipping hide');
-        return;
-    }
-
-    // Normál timeout kezelés...
-}, 10000);
+// Polling loop - nem valtozik, az error handler kozvetlenul
+// hivja a SplashScreen.hide(0)-t, igy a splash azonnal eltunik.
 ```
 
-### 3. Error Overlay UI (ui5-bootstrap.js)
+### 4. Error Overlay UI (ui5-error-handler.js)
 
 ```javascript
 function showErrorOverlay(errorInfo) {
-    // 1. Overlay container létrehozása
+    // 1. Overlay container letrehozasa
     var overlay = document.createElement('div');
     overlay.id = 'ui5-load-error-overlay';
     overlay.className = 'error-overlay';
 
-    // 2. HTML content generálás
-    overlay.innerHTML = `
-        <div class="error-content">
-            <div class="error-icon">⚠️</div>
-            <h2>${errorInfo.title}</h2>
-            <p>${errorInfo.message}</p>
+    // 2. HTML content generalas
+    overlay.innerHTML =
+        '<div class="error-content">' +
+            '<div class="error-icon">warning</div>' +
+            '<h2>' + errorInfo.title + '</h2>' +
+            '<p>' + errorInfo.message + '</p>' +
 
-            <!-- Forrás megjelenítése -->
-            <div class="error-source">...</div>
+            // Forras megjelenitese
+            '<div class="error-source">' +
+                '<strong>Forras:</strong>' +
+                '<code>' + errorInfo.source + '</code>' +
+            '</div>' +
 
-            <!-- Akciógombok -->
-            <div class="error-actions">
-                <button onclick="location.reload()">🔄 Újratöltés</button>
-                <button onclick="console.table(window.UI5_CONFIGS)">📋 Konfig</button>
-            </div>
+            // Akciogombok
+            '<div class="error-actions">' +
+                '<button class="btn-primary" onclick="location.reload()">' +
+                    'Oldal ujratoltese' +
+                '</button>' +
+            '</div>' +
 
-            <!-- Technikai részletek (expandable) -->
-            <details class="error-details">...</details>
+            // Technikai reszletek (expandable)
+            '<details class="error-details">' +
+                '<summary>Technikai reszletek</summary>' +
+                '<pre>' + JSON.stringify(errorInfo.technicalDetails, null, 2) + '</pre>' +
+            '</details>' +
 
-            <!-- Javaslatok -->
-            <div class="error-suggestions">...</div>
-        </div>
-    `;
+            // Javaslatok
+            '<div class="error-suggestions">' +
+                '<h3>Lehetseges megoldasok:</h3>' +
+                '<ul>' +
+                    '<li>Ellenorizd az internet kapcsolatot</li>' +
+                    '<li>Ellenorizd, hogy a fejlesztoi szerver fut-e (fiori run)</li>' +
+                    '<li>Nezd meg a konzolt tovabbi hibakert (F12)</li>' +
+                '</ul>' +
+            '</div>' +
+        '</div>';
 
-    // 3. DOM-ba injektálás
+    // 3. DOM-ba injektalas
     document.body.appendChild(overlay);
 
-    // 4. Fade-in animáció
+    // 4. Fade-in animacio
     setTimeout(function() {
         overlay.classList.add('show');
     }, 10);
 }
 ```
 
-### 4. Error Overlay Styles (splash-screen.css)
+### 5. Error Overlay Styles (splash-screen.css)
 
 ```css
 /* Error Overlay Container */
@@ -184,189 +209,156 @@ function showErrorOverlay(errorInfo) {
     box-shadow: 0 20px 60px rgba(255, 107, 107, 0.3);
 }
 
-/* Animated Icon */
-.error-icon {
-    font-size: 64px;
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-/* ... további stílusok ... */
+/* ... tovabbi stilusok ... */
 ```
 
 ---
 
 ## Error Overlay Elemei
 
-### 1. Error Icon (⚠️)
-- **Méret:** 64px
-- **Animáció:** Pulse (2s loop)
-- **Szín:** Natív emoji sárga
+### 1. Error Icon
+- **Animacio:** Pulse (2s loop)
 
 ### 2. Title
-- **Szöveg:** "UI5 Betöltési Hiba"
-- **Szín:** `#ff6b6b` (piros)
+- **Szoveg:** "UI5 Betoltesi Hiba"
+- **Szin:** `#ff6b6b` (piros)
 - **Font:** 24px, 600 weight
 
 ### 3. Message
-- **Szöveg:** "Az UI5 library nem töltődött be a következő forrásból:"
-- **Szín:** `#ccc` (világosszürke)
+- **Szoveg:** Az aktualis hibauzenet (script error vagy timeout)
+- **Szin:** `#ccc` (vilagosszurke)
 - **Font:** 16px
 
 ### 4. Error Source Box
 - **Background:** Fekete (`rgba(0, 0, 0, 0.4)`)
 - **Border-left:** 4px piros
 - **Tartalom:**
-  - Forrás név (pl. "CDN (SAPUI5)")
+  - Source URL (a `sap-ui-bootstrap` script `src` attributuma)
   - Teljes URL (`<code>` tag)
 
 ### 5. Action Buttons
 
-#### Újratöltés (Primary)
+#### Ujratoltes (Primary)
 ```html
 <button class="btn-primary" onclick="location.reload()">
-    🔄 Oldal újratöltése
+    Oldal ujratoltese
 </button>
 ```
-- **Style:** Lila gradient (`#667eea` → `#764ba2`)
+- **Style:** Lila gradient (`#667eea` -> `#764ba2`)
 - **Hover:** Lift effect (translateY -2px)
 
-#### Konfiguráció (Secondary)
-```html
-<button class="btn-secondary" onclick="console.table(window.UI5_CONFIGS)">
-    📋 Konfiguráció megtekintése
-</button>
-```
-- **Style:** Átlátszó fehér (`rgba(255, 255, 255, 0.1)`)
-- **Akció:** Console-ba kiírja az összes UI5_CONFIG-ot
+> **Megjegyzes:** v4.0-ban mar nincs "Konfiguracio megtekintese" gomb, mert
+> a korabbi `window.UI5_CONFIGS` es environment rendszer megszunt.
+> A konfiguracio most a yaml fajlokban van (ui5.yaml / ui5-cdn.yaml / ui5-backend.yaml).
 
 ### 6. Technical Details (Expandable)
 ```html
 <details class="error-details">
-    <summary>Technikai részletek (kattints a megjelenítéshez)</summary>
+    <summary>Technikai reszletek</summary>
     <pre>{
-  "environment": "cdn",
-  "url": "https://sapui5.hana.ondemand.com/...",
-  "error": "Failed to load resource (network error or 404)"
+  "url": "http://localhost:8300/resources/sap-ui-core.js",
+  "error": "A SAPUI5 library nem toltodott be..."
 }</pre>
 </details>
 ```
-- **Default:** Collapsed (zárt)
-- **Kattintásra:** Expandálódik
-- **Style:** Zöld console-szerű monospace font
+- **Default:** Collapsed (zart)
+- **Kattintasra:** Expandalodik
+- **Style:** Zold console-szeru monospace font
 
-### 7. Suggestions (Megoldási javaslatok)
-- **Background:** Sárga tint (`rgba(255, 193, 7, 0.1)`)
-- **Border-left:** 4px sárga
+### 7. Suggestions (Megoldasi javaslatok)
+- **Background:** Sarga tint (`rgba(255, 193, 7, 0.1)`)
+- **Border-left:** 4px sarga
 - **Tartalom:**
-  - Internet kapcsolat ellenőrzése
-  - Másik mód kipróbálása (Local/Backend)
-  - Backend elérhetőség check
+  - Internet kapcsolat ellenorzese
+  - Fejlesztoi szerver futasanak ellenorzese (fiori run)
   - Console check (F12)
 
 ---
 
-## Hibatípusok és Megjelenítés
+## Hibatipusok es Megjelenitesuk
 
-### 1. CDN Unavailable (404/Network Error)
+### 1. Script Error (404/Network Error)
 
-**Példa scenario:**
-- SAP CDN offline
-- Internet kapcsolat megszakadt
-- Firewall blokkolja
-
-**Error info:**
-```javascript
-{
-    title: 'UI5 Betöltési Hiba',
-    environment: 'CDN (SAPUI5)',
-    source: 'https://sapui5.hana.ondemand.com/resources/sap-ui-core.js',
-    error: 'Failed to load resource (network error or 404)'
-}
-```
-
-**Javaslat:**
-- Ellenőrizd az internet kapcsolatot
-- Próbáld meg Local Mode-ot
-
----
-
-### 2. Backend Server Offline
-
-**Példa scenario:**
-- Backend szerver (192.168.1.10:9000) nem elérhető
-- Backend mode használatakor
+**Pelda scenario:**
+- fiori run nem fut, nincs szerver
+- Halozati hiba
+- CDN nem elerheto (ui5-cdn.yaml hasznalatakor)
 
 **Error info:**
 ```javascript
 {
-    title: 'UI5 Betöltési Hiba',
-    environment: 'Backend (192.168.1.10:9000)',
-    source: 'http://192.168.1.10:9000/resources/sap-ui-core.js',
-    error: 'Failed to load resource (network error or 404)'
+    title: 'UI5 Betoltesi Hiba',
+    message: 'A SAPUI5 library nem toltodott be (halozati hiba vagy nem elerheto forras).',
+    source: 'http://localhost:8300/resources/sap-ui-core.js',
+    technicalDetails: {
+        url: 'http://localhost:8300/resources/sap-ui-core.js',
+        error: '...'
+    }
 }
 ```
 
 **Javaslat:**
-- Ellenőrizd a backend szerver elérhetőségét
-- Ping 192.168.1.10
-- Próbáld meg CDN vagy Local mode-ot
+- Ellenorizd az internet kapcsolatot
+- Inditsd el a fiori run szervert
 
 ---
 
-### 3. CORS Error (Hybrid Mode)
+### 2. Timeout (15 masodperc)
 
-**Példa scenario:**
-- Proxy nincs beállítva
-- Hybrid mode használatakor CORS hiba
+**Pelda scenario:**
+- Lassú halozat
+- CDN valaszol de nagyon lassan
+- Reszleges betoltes utan befagy
 
 **Error info:**
 ```javascript
 {
-    title: 'UI5 Betöltési Hiba',
-    environment: 'Hybrid (Local Proxy)',
-    source: '/backend-proxy/resources/sap-ui-core.js',
-    error: 'Failed to load resource (CORS policy)'
+    title: 'UI5 Betoltesi Hiba',
+    message: 'A SAPUI5 library nem toltodott be az elvart idon belul (15 mp).',
+    source: 'http://localhost:8300/resources/sap-ui-core.js',
+    technicalDetails: {
+        url: 'http://localhost:8300/resources/sap-ui-core.js',
+        error: '...'
+    }
 }
 ```
 
 **Javaslat:**
-- Ellenőrizd a proxy konfigurációt
-- Nézd meg a HYBRID_MODE_GUIDE.md-t
-- Próbáld meg Backend mode-ot közvetlenül
+- Ellenorizd a halozati sebesseg
+- Probald ujra
 
 ---
 
-## Tesztelés
+### 3. Backend Server Offline (ui5-backend.yaml modban)
+
+**Pelda scenario:**
+- Backend szerver (192.168.1.10:9000) nem elerheto
+- fiori-tools-proxy nem tudja proxyzni a /resources utvonalat
+
+**Javaslat:**
+- Ellenorizd a backend szerver elerhetoseget
+- Probald meg CDN vagy Local mode-ot (ui5-cdn.yaml vagy ui5.yaml)
+
+---
+
+## Teszteles
 
 ### Manual Test - Invalid URL
 
 **Test file:** `test-error-overlay.html`
 
-```html
-<script>
-    // Force error by using invalid URL
-    UI5_CONFIGS.cdn.url = 'https://invalid-url.example.com/sap-ui-core.js';
-</script>
-<script src="ui5-bootstrap.js"></script>
-```
-
-**Futtatás:**
+**Futtatas:**
 ```bash
-# 1. Indítsd a szervert
+# 1. Inditsd a szervert
 npm start
 
 # 2. Nyisd meg a test oldalt
 open http://localhost:8300/test-error-overlay.html
 
-# 3. Várható eredmény:
+# 3. Varhato eredmeny:
 # - Splash screen megjelenik
-# - ~1s múlva UI5 betöltés FAIL
-# - Splash AZONNAL eltűnik
+# - ~1s mulva UI5 betoltes FAIL (script error)
+# - Splash AZONNAL eltunik
 # - Error overlay MEGJELENIK
 ```
 
@@ -387,19 +379,15 @@ describe('Error Overlay', () => {
             .should('be.visible')
             .and('have.class', 'show');
 
-        // Splash screen eltűnt
+        // Splash screen eltunt
         cy.get('#splash-screen').should('not.exist');
 
-        // Error overlay tartalom ellenőrzése
+        // Error overlay tartalom ellenorzese
         cy.get('.error-content h2')
-            .should('contain', 'UI5 Betöltési Hiba');
+            .should('contain', 'UI5 Betoltesi Hiba');
 
-        cy.get('.error-source code')
-            .should('contain', 'invalid-url.example.com');
-
-        // Akciógombok láthatóak
-        cy.get('.btn-primary').should('contain', 'Újratöltés');
-        cy.get('.btn-secondary').should('contain', 'Konfiguráció');
+        // Akciogombok lathatoek
+        cy.get('.btn-primary').should('contain', 'Ujratoltes');
     });
 
     it('should reload page when clicking reload button', () => {
@@ -422,108 +410,105 @@ describe('Error Overlay', () => {
 
 ## User Flows
 
-### Flow 1: Error → Reload
+### Flow 1: Error -> Reload
 
 ```
-1. User látja az error overlay-t
-2. Megérti mi a probléma (CDN offline)
-3. Kattint: "🔄 Oldal újratöltése"
-4. Oldal újratölt
-5a. Ha CDN visszajött → ✅ Sikeres betöltés
-5b. Ha CDN még mindig offline → Error overlay újra
+1. User latja az error overlay-t
+2. Megeri mi a problema (szerver nem fut)
+3. Kattint: "Oldal ujratoltese"
+4. Oldal ujratolt
+5a. Ha szerver fut -> Sikeres betoltes
+5b. Ha szerver meg nem fut -> Error overlay ujra
 ```
 
-### Flow 2: Error → Config Check → Mode Switch
+### Flow 2: Error -> Technical Details -> Debug
 
 ```
-1. User látja az error overlay-t
-2. Kattint: "📋 Konfiguráció megtekintése"
-3. Console megnyílik, látja az összes mode-ot
-4. Bezárja az overlay-t (ESC vagy kívülre kattintás)
-5. URL-ben módosít: ?env=local
-6. Oldal újratölt Local mode-ban
-7. ✅ Sikeres betöltés (local UI5)
-```
-
-### Flow 3: Error → Technical Details → Debug
-
-```
-1. User látja az error overlay-t
-2. Kattint: "Technikai részletek" (expandable)
-3. Látja a JSON részleteket:
-   - environment: "cdn"
-   - url: "https://..."
-   - error: "Failed to load resource"
-4. Megérti hogy CDN hiba
-5. Megoldja a problémát (VPN, internet)
-6. Kattint: "🔄 Oldal újratöltése"
-7. ✅ Sikeres betöltés
+1. User latja az error overlay-t
+2. Kattint: "Technikai reszletek" (expandable)
+3. Latja a JSON reszleteket:
+   - url: "http://localhost:8300/resources/sap-ui-core.js"
+   - error: "..."
+4. Megeri hogy szerver/CDN hiba
+5. Megoldja a problemat (szerver inditas, halozat)
+6. Kattint: "Oldal ujratoltese"
+7. Sikeres betoltes
 ```
 
 ---
 
-## Architektúra Változások
+## Architektura Valtozasok (v3.2 -> v4.0)
 
-### Signal Flow Diagram
+### Fontos Kulonbsegek
+
+| Jellemzo | v3.2 (regi) | v4.0 (uj) |
+|----------|-------------|------------|
+| **Error detection fajl** | `ui5-bootstrap.js` | `ui5-error-handler.js` |
+| **Detection mechanizmus** | Csak script.onerror | script error event + 15s timeout |
+| **Environment info** | `config.name`, `config.url` | Nincs - csak `bootstrapScript.src` |
+| **Config button** | Van (console.table) | Nincs (yaml-bol jon a config) |
+| **Error overlay source** | Environment nev + URL | Csak URL |
+| **UI5 config rendszer** | `window.UI5_CONFIGS` + `window.UI5_ENVIRONMENT` | Nincs - yaml fajlok + fiori-tools-proxy |
+
+### Signal Flow Diagram (v4.0)
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ UI5 Bootstrap (ui5-bootstrap.js)                    │
-└─────────────────────────────────────────────────────┘
-                    ↓
-        script.onerror() trigger
-                    ↓
-        ┌───────────────────────┐
-        │ window.UI5_LOAD_ERROR │ = true
-        └───────────────────────┘
-                    ↓
-        ┌───────────────────────────────────────┐
-        │ window.SplashScreen.hide(0)           │
-        │ (Splash azonnali eltüntetés)          │
-        └───────────────────────────────────────┘
-                    ↓
-        ┌───────────────────────────────────────┐
-        │ showErrorOverlay(errorInfo)           │
-        │ (Error overlay megjelenítés)          │
-        └───────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────────┐
-│ Splash Screen (splash-screen.js)                    │
-│ - Poller detektálja: window.UI5_LOAD_ERROR         │
-│ - Poller LEÁLL                                      │
-│ - Timeout SKIPELI a hide-ot                        │
-└─────────────────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────────────────┐
-│ DOM State                                           │
-│ ❌ #splash-screen (REMOVED)                         │
-│ ✅ .error-overlay (VISIBLE)                         │
-└─────────────────────────────────────────────────────┘
++---------------------------------------------------------+
+| index.html                                              |
+|   <script src="resources/sap-ui-core.js">               |
+|   <script src="ui5-error-handler.js">                   |
++---------------------------------------------------------+
+                    |
+        ui5-error-handler.js
+        Listens on:
+          1. bootstrapScript 'error' event
+          2. 15 second setTimeout
+                    |
+        +-------------------------------+
+        | script error OR timeout       |
+        +-------------------------------+
+                    |
+        +-------------------------------+
+        | onLoadError(message)          |
+        |   - SplashScreen.hide(0)      |
+        |   - showErrorOverlay(...)     |
+        +-------------------------------+
+                    |
++---------------------------------------------------------+
+| DOM State                                               |
+|   #splash-screen (HIDDEN)                               |
+|   .error-overlay (VISIBLE)                              |
++---------------------------------------------------------+
 ```
 
 ---
 
-## Verziókezelés
+## Verziokkezeles
 
-| Verzió | Dátum | Módosítás |
+| Verzio | Datum | Modositas |
 |--------|-------|-----------|
-| v3.1 | 2026-02-14 | Alert popup megoldás (rossz UX) |
-| v3.2 | 2026-02-15 | Error overlay implementálva |
+| v3.1 | 2026-02-14 | Alert popup megoldas (rossz UX) |
+| v3.2 | 2026-02-15 | Error overlay implementalva (ui5-bootstrap.js) |
+| v4.0 | 2026-02-15 | Migracio ui5-error-handler.js-re, fiori run architektura |
 
 ---
 
-## Függőségek
+## Fuggosegek
 
-| Fájl | Módosítás | Verzió |
-|------|-----------|--------|
-| ui5-bootstrap.js | Error detection + overlay | v3.2 |
-| splash-screen.js | Error flag check | v3.2 |
-| splash-screen.css | Error overlay styles | v3.2 |
-| test-error-overlay.html | Manual test | v3.2 |
+| Fajl | Szerepe | Verzio |
+|------|---------|--------|
+| ui5-error-handler.js | Error detection + overlay | v4.0 |
+| splash-screen.js | Splash API (SplashScreen.hide hivas) | v4.0 |
+| splash-screen.css | Error overlay styles | v3.2+ |
+| test-error-overlay.html | Manual test | v3.2+ |
+
+**Torolve v4.0-ban:**
+- `ui5-bootstrap.js` - Korabban ez tartalmazta az error detection-t es overlay-t
+- `config.js` - Korabban ez tartalmazta az environment konfigot (UI5_CONFIGS)
 
 ---
 
-## Következő Lépések (v3.3+)
+## Kovetkezo Lepesek (v4.1+)
 
 ### Javaslat 1: Retry Mechanizmus
 ```javascript
@@ -536,7 +521,7 @@ function retryUI5Load() {
         var delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
         setTimeout(function() {
             retryCount++;
-            console.log('[UI5 Bootstrap] Retry attempt', retryCount);
+            console.log('[UI5] Retry attempt', retryCount);
             location.reload();
         }, delay);
     } else {
@@ -545,60 +530,43 @@ function retryUI5Load() {
 }
 ```
 
-### Javaslat 2: Fallback CDN
-```javascript
-// Try alternative CDN if primary fails
-var cdnFallbacks = [
-    'https://sapui5.hana.ondemand.com/...',
-    'https://openui5.hana.ondemand.com/...',
-    '/vendor/sapui5/sap-ui-core.js'  // Local vendored copy
-];
-
-var currentCDNIndex = 0;
-
-script.onerror = function() {
-    currentCDNIndex++;
-    if (currentCDNIndex < cdnFallbacks.length) {
-        console.log('[UI5 Bootstrap] Trying fallback CDN', currentCDNIndex);
-        script.src = cdnFallbacks[currentCDNIndex];
-    } else {
-        showErrorOverlay(...);
-    }
-};
-```
-
-### Javaslat 3: Error Reporting (Analytics)
+### Javaslat 2: Error Reporting (Analytics)
 ```javascript
 // Send error to analytics
-script.onerror = function() {
+bootstrapScript.addEventListener('error', function() {
     if (window.gtag) {
         gtag('event', 'ui5_load_error', {
-            environment: env,
-            url: config.url,
+            url: bootstrapScript.src,
             userAgent: navigator.userAgent
         });
     }
-
-    showErrorOverlay(...);
-};
+    onLoadError('...');
+});
 ```
 
 ---
 
-## Összegzés
+## Osszegzes
 
-**v3.2 Error Handling Jellemzői:**
+**v4.0 Error Handling Jellemzoi:**
 
-✅ **Azonnali Feedback** - Splash eltűnik hibánál, nem 10s várakozás
-✅ **Vizuális Error State** - Szép error overlay (nem alert popup)
-✅ **Actionable UI** - Gombok: Reload, Config check
-✅ **Technical Details** - Expandable JSON debug info
-✅ **User Suggestions** - Konkrét megoldási javaslatok
-✅ **Tesztelhető** - test-error-overlay.html test file
-✅ **Dokumentált** - Teljes flow és komponens leírás
+- **Azonnali Feedback** - Splash eltunik hibanal, nem 10s varakozas
+- **Ket detekcios mechnizmus** - Script error event + 15 masodperces timeout
+- **Vizualis Error State** - Szep error overlay (nem alert popup)
+- **Actionable UI** - Reload gomb
+- **Technical Details** - Expandable JSON debug info
+- **User Suggestions** - Konkret megoldasi javaslatok
+- **Tesztelheto** - test-error-overlay.html test file
+- **Dokumentalt** - Teljes flow es komponens leiras
+
+**v3.2-rol v4.0-ra valo atallasnali fontos valtozasok:**
+- Error detection athelyezve `ui5-bootstrap.js`-bol `ui5-error-handler.js`-be
+- Nincs tobb environment/config hivatkozas az error overlay-ben
+- Nincs "Konfiguracio megtekintese" gomb (nem letezik mar UI5_CONFIGS)
+- Timeout hozzaadva (15 masodperc) a script error event melle
 
 **User Impact:**
-- Jobb UX betöltési hiba esetén
+- Jobb UX betoltesi hiba eseten
 - Nem "elakad" a splash screenen
-- Gyorsabban megérti mi a probléma
-- Tud akciókat végrehajtani (reload, config check)
+- Gyorsabban megeri mi a problema
+- Tud akciokat vegrehajtani (reload, debug)
