@@ -8,10 +8,21 @@ npm install
 
 ## Gyors Indítás
 
+### Smart Start (ajánlott)
+
 | Parancs | Leírás | Port |
 |---------|--------|------|
-| `npm start` | Smart Start CDN (ajánlott) | 8300 |
-| `npm run start:cdn` | CDN mód (manuális) | 8300 |
+| `npm start` | Smart Start CDN (alapértelmezett) | 8300 |
+| `npm run smart-start:cdn` | Smart Start CDN | 8300 |
+| `npm run smart-start:local` | Smart Start Local | 8300 |
+| `npm run smart-start:backend` | Smart Start Backend | 8300 |
+| `npm run smart-start:hybrid` | Smart Start Hybrid | 8300 |
+
+### Manuális (haladó)
+
+| Parancs | Leírás | Port |
+|---------|--------|------|
+| `npm run start:cdn` | CDN mód (build + serve) | 8300 |
 | `npm run start:local` | Local mód (UI5 CLI) | 8300 |
 | `npm run start:backend` | Backend mód (direct) | 8300 |
 | `npm run start:hybrid` | Hybrid mód (proxy) | 8300 |
@@ -19,19 +30,21 @@ npm install
 ## Melyiket használjam?
 
 - **Gyors teszt kell?** → `npm start` (Smart Start CDN)
-- **Nincs internet?** → `npm run start:local`
-- **Van backend szerver?** → `npm run start:hybrid` (`.env` beállítás után)
-- **Port foglalt hiba?** → `npm start` automatikusan kezeli!
+- **Nincs internet?** → `npm run smart-start:local`
+- **Van backend szerver?** → `npm run smart-start:hybrid` (`.env` beállítás után)
+- **Backend nélkül tesztelni a hibakezelést?** → `npm run smart-start:backend` (error overlay jelenik meg)
+- **Port foglalt hiba?** → Bármelyik `smart-start:*` automatikusan kezeli!
 
 ## Smart Start vs Manuális
 
-**Smart Start** (`npm start`):
+**Smart Start** (`npm start` / `npm run smart-start:*`):
 - ✅ Automatikusan leöli a futó szervert, ha port foglalt
-- ✅ Csak projekthez tartozó processt öli le
+- ✅ Csak projekthez tartozó processt öli le (biztonságos)
 - ✅ Build + Szerver egy parancsban
 - ✅ Ajánlott mindennapi használatra
+- ✅ Minden módhoz elérhető: `smart-start:cdn`, `smart-start:local`, `smart-start:backend`, `smart-start:hybrid`
 
-**Manuális** (`npm run start:cdn`):
+**Manuális** (`npm run start:cdn` stb.):
 - ⚠️ NEM kezeli a port konfliktusokat
 - ⚠️ Manuálisan kell leállítani a futó szervert
 - ✅ Gyorsabb (nincs port check)
@@ -47,7 +60,7 @@ cp .env.example .env
 # UI5_MIDDLEWARE_SIMPLE_PROXY_BASEURI=http://192.168.1.10:9000
 
 # 3. Indítsd a hybrid módot
-npm run start:hybrid
+npm run smart-start:hybrid
 ```
 
 ## Custom Port Használat
@@ -82,11 +95,11 @@ $Env:PORT=9000; npm start
 1. Nyisd meg: `http://localhost:8300/`
 2. F12 → Console → Ellenőrizd:
    ```javascript
-   window.UI5_ENVIRONMENT  // → 'cdn' vagy 'local' stb.
+   window.UI5_ENVIRONMENT  // → 'cdn', 'local', 'backend', 'hybrid'
+   window.SplashScreen     // → object (ha elérhető)
    ```
-3. Splash screen megjelenik videóval
-4. UI5 app betöltődik
-5. Splash fade-out animációval eltűnik
+3. **Sikeres betöltés** (CDN/local/hybrid): Splash screen megjelenik videóval → UI5 app betöltődik → Splash fade-out
+4. **Sikertelen betöltés** (backend elérhető szerver nélkül): Splash → Error overlay ("UI5 Betöltési Hiba") → Technikai részletek + megoldási javaslatok
 
 ## Hibaelhárítás
 
