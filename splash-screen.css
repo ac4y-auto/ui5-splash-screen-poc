@@ -39,37 +39,6 @@
     background-position: center;
 }
 
-/* Environment Badge (optional debug info) */
-#env-badge {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-family: monospace;
-    font-size: 12px;
-    z-index: 10000;
-    display: none;
-}
-
-#env-badge.show {
-    display: block;
-}
-
-#env-badge.cdn {
-    background-color: rgba(0, 123, 255, 0.8);
-}
-
-#env-badge.local {
-    background-color: rgba(40, 167, 69, 0.8);
-}
-
-#env-badge.backend {
-    background-color: rgba(255, 193, 7, 0.8);
-}
-
 /* Hide main content while loading */
 body.loading #content {
     visibility: hidden;

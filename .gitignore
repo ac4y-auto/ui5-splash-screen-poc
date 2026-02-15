@@ -22,7 +22,6 @@ npm-debug.log*
 # Build outputs
 dist/
 build/
-index.html  # Generated from index.template.html by build.js
 
 # Temporary files
 tmp/

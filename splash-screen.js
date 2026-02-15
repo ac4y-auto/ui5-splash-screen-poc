@@ -20,8 +20,6 @@
             console.log('[Splash] Video playback rate set to 0.2 (5x slower)');
         }
 
-        // Show environment badge (optional)
-        showEnvironmentBadge();
     });
 
     /**
@@ -46,21 +44,6 @@
                 }, 1000); // Match CSS transition duration
             }
         }, delay);
-    }
-
-    /**
-     * Show environment badge (optional debug info)
-     */
-    function showEnvironmentBadge() {
-        // Get current environment
-        var env = getCurrentEnv ? getCurrentEnv() : 'cdn';
-
-        // Create badge element
-        var badge = document.getElementById('env-badge');
-        if (badge) {
-            badge.textContent = 'UI5 Source: ' + env.toUpperCase();
-            badge.className = 'env-badge ' + env;
-        }
     }
 
     /**

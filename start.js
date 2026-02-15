@@ -7,7 +7,11 @@
  * - Checks if port is in use
  * - Kills existing process if it belongs to this project
  * - Prevents killing unrelated processes
- * - Starts the server with project identifier
+ * - Starts fiori run with optional config file
+ *
+ * Usage:
+ *   node start.js                    # Default (ui5.yaml)
+ *   node start.js ui5-backend.yaml   # With backend proxy config
  */
 
 const { execSync, spawn } = require('child_process');
@@ -26,19 +30,15 @@ if (isNaN(DEFAULT_PORT) || DEFAULT_PORT < 1 || DEFAULT_PORT > 65535) {
 }
 
 const PROJECT_MARKER = 'ui5-splash-screen-poc';
-const env = process.argv[2] || 'cdn'; // cdn, local, backend, hybrid
+const configFile = process.argv[2]; // Optional: yaml config file path
 
-// Valid environments
-const validEnvs = ['cdn', 'local', 'backend', 'hybrid'];
-if (!validEnvs.includes(env)) {
-    console.error(`❌ Invalid environment: ${env}`);
-    console.error(`   Valid options: ${validEnvs.join(', ')}`);
-    process.exit(1);
-}
-
-console.log(`🚀 Smart Start - ${env.toUpperCase()} Mode`);
+console.log(`🚀 Smart Start`);
 console.log(`   Port: ${DEFAULT_PORT}`);
-console.log(`   Project: ${PROJECT_MARKER}\n`);
+console.log(`   Project: ${PROJECT_MARKER}`);
+if (configFile) {
+    console.log(`   Config: ${configFile}`);
+}
+console.log('');
 
 /**
  * Check if port is in use and get PID
@@ -49,14 +49,12 @@ function getPortPID(port) {
         if (process.platform === 'win32') {
             cmd = `netstat -ano | findstr :${port}`;
         } else {
-            // macOS/Linux - only get the LISTEN process (not connected clients)
             cmd = `lsof -ti:${port} -sTCP:LISTEN`;
         }
 
         const output = execSync(cmd, { encoding: 'utf8' });
 
         if (process.platform === 'win32') {
-            // Parse Windows netstat output
             const lines = output.trim().split('\n');
             for (const line of lines) {
                 const match = line.match(/LISTENING\s+(\d+)/);
@@ -66,11 +64,9 @@ function getPortPID(port) {
             }
             return null;
         } else {
-            // macOS/Linux - lsof returns PID directly
             return output.trim().split('\n')[0];
         }
     } catch (error) {
-        // No process on port (lsof returns exit code 1)
         return null;
     }
 }
@@ -89,9 +85,8 @@ function isProjectProcess(pid) {
 
         const cmdLine = execSync(cmd, { encoding: 'utf8' });
 
-        // Check if command line contains project marker OR common server names
         return cmdLine.includes(PROJECT_MARKER) ||
-               cmdLine.includes('http-server') ||
+               cmdLine.includes('fiori') ||
                cmdLine.includes('ui5 serve');
     } catch (error) {
         return false;
@@ -127,17 +122,14 @@ function main() {
     if (pid) {
         console.log(`⚠️  Port ${DEFAULT_PORT} is already in use (PID: ${pid})`);
 
-        // 2. Check if it's our project's process
         if (isProjectProcess(pid)) {
             console.log(`✓  Process belongs to this project (${PROJECT_MARKER})`);
 
-            // 3. Kill it
             if (!killProcess(pid)) {
                 console.error(`❌ Could not kill process. Please stop it manually.`);
                 process.exit(1);
             }
 
-            // Wait a bit for port to be released
             console.log(`⏳ Waiting for port to be released...`);
             const start = Date.now();
             while (Date.now() - start < 3000) {
@@ -150,44 +142,26 @@ function main() {
             console.error(`❌ Port ${DEFAULT_PORT} is used by another application (PID: ${pid})`);
             console.error(`   This process does NOT belong to ${PROJECT_MARKER}`);
             console.error(`   Please stop it manually or use a different port:`);
-            console.error(`   PORT=9000 npm run smart-start:${env}`);
+            console.error(`   PORT=9000 npm run smart-start`);
             process.exit(1);
         }
     } else {
         console.log(`✓  Port ${DEFAULT_PORT} is available\n`);
     }
 
-    // 4. Start the server with project marker in environment
-    console.log(`🔧 Building for environment: ${env}...`);
+    // 2. Start fiori run
+    console.log(`🚀 Starting fiori run...\n`);
 
-    try {
-        execSync(`node build.js ${env}`, { stdio: 'inherit' });
-    } catch (error) {
-        console.error(`❌ Build failed`);
-        process.exit(1);
+    const args = ['fiori', 'run', '--port', DEFAULT_PORT.toString(), '--open', 'index.html'];
+    if (configFile) {
+        args.push('--config', configFile);
     }
 
-    console.log(`\n🚀 Starting server...\n`);
-
-    // Determine command based on environment
-    let command, args;
-    if (env === 'local' || env === 'hybrid') {
-        command = 'npx';
-        args = ['ui5', 'serve', '--port', DEFAULT_PORT.toString(), '--open'];
-        if (env === 'hybrid') {
-            args.push('--config', 'ui5-backend.yaml');
-        }
-    } else {
-        command = 'npx';
-        args = ['http-server', '-p', DEFAULT_PORT.toString(), '--cors', '-o'];
-    }
-
-    // Start server with PROJECT_MARKER in environment
-    const server = spawn(command, args, {
+    const server = spawn('npx', args, {
         stdio: 'inherit',
         env: {
             ...process.env,
-            UI5_SPLASH_PROJECT: PROJECT_MARKER, // Project identifier
+            UI5_SPLASH_PROJECT: PROJECT_MARKER,
             PORT: DEFAULT_PORT.toString()
         }
     });

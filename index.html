@@ -5,15 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UI5 Splash Screen POC</title>
 
-    <!-- Environment configuration (injected at build/server start) -->
-    <script>window.UI5_ENVIRONMENT = 'backend';</script>
-    <script src="config.js"></script>
-
     <!-- Splash screen styles -->
     <link rel="stylesheet" href="splash-screen.css">
 
-    <!-- UI5 Bootstrap (dynamic injection based on environment) -->
-    <script src="ui5-bootstrap.js"></script>
+    <!-- SAPUI5 Bootstrap (served by fiori-tools-proxy from SAP CDN) -->
+    <script id="sap-ui-bootstrap"
+        src="resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-libs="sap.m"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-onInit="module:sap/ui/core/ComponentSupport"
+        data-sap-ui-resourceroots='{"myapp": "./"}'>
+    </script>
+
+    <!-- UI5 load error handler -->
+    <script src="ui5-error-handler.js"></script>
 
     <!-- Splash screen logic -->
     <script src="splash-screen.js"></script>
@@ -25,9 +32,6 @@
             <source src="splash-video.mp4" type="video/mp4">
         </video>
     </div>
-
-    <!-- Environment Badge (shows which UI5 source is loaded) -->
-    <div id="env-badge"></div>
 
     <!-- UI5 Application Container -->
     <div

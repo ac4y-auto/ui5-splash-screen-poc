@@ -1,35 +1,24 @@
 {
   "name": "ui5-splash-screen-poc",
   "version": "1.0.0",
-  "description": "UI5 Splash Screen POC with multiple environment configurations",
+  "description": "UI5 Splash Screen POC with fiori-tools-proxy",
   "scripts": {
-    "start": "npm run smart-start:cdn",
-    "start:cdn": "node build.js cdn && http-server -p ${PORT:-8300} --cors -o",
-    "start:local": "node build.js local && npx ui5 serve --port ${PORT:-8300} --open",
-    "start:backend": "node build.js backend && http-server -p ${PORT:-8300} --cors -o",
-    "start:hybrid": "node build.js hybrid && npx ui5 serve --port ${PORT:-8300} --config ui5-backend.yaml --open",
-    "smart-start:cdn": "node start.js cdn",
-    "smart-start:local": "node start.js local",
-    "smart-start:backend": "node start.js backend",
-    "smart-start:hybrid": "node start.js hybrid",
-    "build": "node build.js",
-    "serve:cdn": "http-server -p ${PORT:-8300} --cors -o",
-    "serve:local": "npx ui5 serve --port ${PORT:-8300} --open",
-    "serve:backend": "http-server -p ${PORT:-8300} --cors -o",
-    "serve:hybrid": "npx ui5 serve --port ${PORT:-8300} --config ui5-backend.yaml --open"
+    "start": "npx fiori run --port 8300 --open index.html",
+    "start:backend": "npx fiori run --port 8300 --config ui5-backend.yaml --open index.html",
+    "smart-start": "node start.js",
+    "smart-start:backend": "node start.js ui5-backend.yaml"
   },
   "keywords": [
     "ui5",
     "splash-screen",
     "sapui5",
-    "sap"
+    "sap",
+    "fiori"
   ],
   "author": "ac4y",
   "license": "MIT",
   "devDependencies": {
-    "@ui5/cli": "^4.0.43",
-    "cross-env": "^7.0.3",
-    "http-server": "^14.1.1",
-    "ui5-middleware-simpleproxy": "^3.6.2"
+    "@sap/ux-ui5-tooling": "^1.20.2",
+    "@ui5/cli": "^4.0.43"
   }
 }
