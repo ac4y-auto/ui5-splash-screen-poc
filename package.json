@@ -4,13 +4,16 @@
   "description": "UI5 Splash Screen POC with fiori-tools-proxy",
   "scripts": {
     "start": "npx fiori run --port 8300 --open index.html",
-    "start:cdn": "npx fiori run --port 8300 --config ui5-cdn.yaml --open index.html",
     "start:local": "npx fiori run --port 8300 --open index.html",
+    "start:cdn": "npx fiori run --port 8300 --config ui5-cdn.yaml --open index.html",
     "start:backend": "npx fiori run --port 8300 --config ui5-backend.yaml --open index.html",
+    "start:hybrid": "npx fiori run --port 8300 --config ui5-hybrid.yaml --open index.html",
     "smart-start": "node start.js",
-    "smart-start:cdn": "node start.js ui5-cdn.yaml",
     "smart-start:local": "node start.js",
-    "smart-start:backend": "node start.js ui5-backend.yaml"
+    "smart-start:cdn": "node start.js ui5-cdn.yaml",
+    "smart-start:backend": "node start.js ui5-backend.yaml",
+    "smart-start:hybrid": "node start.js ui5-hybrid.yaml",
+    "purge": "node purge.js"
   },
   "keywords": [
     "ui5",
