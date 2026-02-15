@@ -1,9 +1,9 @@
 // UI5 Environment Configuration
 const UI5_CONFIGS = {
     cdn: {
-        name: 'CDN (SAPUI5 1.105.0)',
-        url: 'https://ui5.sap.com/1.105.0/resources/sap-ui-core.js',
-        description: 'Uses SAPUI5 1.105.0 from official SAP CDN (version pinned)'
+        name: 'CDN (SAPUI5 Latest)',
+        url: 'https://sapui5.hana.ondemand.com/resources/sap-ui-core.js',
+        description: 'Uses SAPUI5 latest version from official SAP CDN (always up-to-date)'
     },
     local: {
         name: 'Local (UI5 CLI serve)',
@@ -22,19 +22,13 @@ const UI5_CONFIGS = {
     }
 };
 
-// Get current environment (default: cdn)
+// Get current environment (set at build/server start)
+// This value is injected by the server via placeholder replacement
+// Default: 'cdn' (if not replaced by build process)
 function getCurrentEnv() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const envParam = urlParams.get('env');
-    const envFromStorage = localStorage.getItem('ui5_env');
-    return envParam || envFromStorage || 'cdn';
-}
-
-// Save environment preference
-function saveEnvPreference(env) {
-    if (UI5_CONFIGS[env]) {
-        localStorage.setItem('ui5_env', env);
-    }
+    // Environment is set at build time, not runtime
+    // The placeholder {{UI5_ENV}} will be replaced by server startup script
+    return window.UI5_ENVIRONMENT || 'cdn';
 }
 
 // Get UI5 bootstrap URL for current environment

@@ -168,20 +168,33 @@ A lényeg: `/proxy/resources/sap-ui-core.js` – relatív URL, a `/proxy` prefix
 
 ### 4. lépés: `package.json` – npm script
 
+**v3.0 Build-Based Workflow:**
+
 ```json
 {
   "scripts": {
-    "start:hybrid": "npx ui5 serve --port 8300 --config ui5-backend.yaml --open index-configurable.html?env=hybrid"
+    "start:hybrid": "node build.js hybrid && npx ui5 serve --port 8300 --config ui5-backend.yaml --open",
+    "build": "node build.js",
+    "serve:hybrid": "npx ui5 serve --port 8300 --config ui5-backend.yaml --open"
   }
 }
 ```
 
+**Változás a v3.0-ban:**
+- ❌ **Régi (v2.0)**: URL paraméter (`?env=hybrid`) kell
+- ✅ **Új (v3.0)**: Build script injektálja a környezetet az `index.html`-be
+
 **Paraméterek:**
-- `--port 8300` – fejlesztői szerver portja
-- `--config ui5-backend.yaml` – a proxy-s konfigurációt használja (nem az alap `ui5.yaml`-t)
-- `--open ...?env=hybrid` – automatikusan megnyitja a böngészőt hybrid módban
+- `node build.js hybrid` – Beinjektálja `window.UI5_ENVIRONMENT = 'hybrid'` az index.html-be
+- `--port 8300` – Fejlesztői szerver portja
+- `--config ui5-backend.yaml` – A proxy-s konfigurációt használja (nem az alap `ui5.yaml`-t)
+- `--open` – Automatikusan megnyitja a böngészőt a `http://localhost:8300/` címen
+
+**Nincs szükség URL paraméterre!** A `?env=hybrid` már **NEM kell**.
 
 ### 5. lépés: Indítás
+
+**v3.0 Workflow:**
 
 ```bash
 npm run start:hybrid
@@ -189,58 +202,85 @@ npm run start:hybrid
 
 Várt kimenet:
 ```
+🔧 Building for environment: hybrid
+✅ Environment 'hybrid' injected into index.html
+   window.UI5_ENVIRONMENT = 'hybrid'
+
+📝 You can now start the server with: npm run serve:hybrid
+
 info graph:helpers:ui5Framework Using OpenUI5 version: 1.105.0
 Server started
 URL: http://localhost:8300
 ```
 
-Böngészőben: `http://localhost:8300/index-configurable.html?env=hybrid`
+Böngésző automatikusan megnyílik: `http://localhost:8300/` (nincs URL paraméter!)
+
+**Ellenőrzés böngészőben:**
+```javascript
+// F12 Console
+window.UI5_ENVIRONMENT  // → "hybrid"
+```
 
 ---
 
 ## VS Code integráció
 
-### launch.json
+### launch.json (v3.0)
+
+**Új Node-alapú launch konfiguráció** (az `.vscode/launch.json` tartalmazza):
 
 ```json
 {
-    "name": "Hybrid mód (proxy → 192.168.1.10)",
-    "type": "chrome",
-    "request": "launch",
-    "url": "http://localhost:8300/index-configurable.html?env=hybrid",
-    "webRoot": "${workspaceFolder}",
-    "preLaunchTask": "serve:hybrid",
-    "runtimeArgs": ["--auto-open-devtools-for-tabs"]
-}
-```
-
-### tasks.json
-
-```json
-{
-    "label": "serve:hybrid",
-    "type": "npm",
-    "script": "start:hybrid",
-    "isBackground": true,
-    "problemMatcher": {
-        "pattern": {
-            "regexp": "^$"
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "UI5 Splash - Hybrid Mode",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "start:hybrid"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "serverReadyAction": {
+                "pattern": "Server started",
+                "uriFormat": "http://localhost:8300",
+                "action": "openExternally"
+            }
         },
-        "background": {
-            "activeOnStart": true,
-            "beginsPattern": "^(Starting up|Server started)",
-            "endsPattern": "^(Available on|URL: http)"
+        {
+            "name": "Build Only (Hybrid)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/build.js",
+            "args": ["hybrid"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal"
         }
-    },
-    "presentation": {
-        "reveal": "silent",
-        "panel": "shared",
-        "group": "serve"
-    }
+    ]
 }
 ```
 
-**Használat:** VS Code → Run and Debug (Ctrl+Shift+D) → "Hybrid mód" → F5
+**Használat:**
+1. **F5** vagy Run → Start Debugging
+2. Válaszd: "UI5 Splash - Hybrid Mode"
+3. Build script fut → UI5 CLI elindul → Böngésző megnyílik
+
+**Előnyök v3.0-ban:**
+- ✅ Automatikus build + serve egy lépésben
+- ✅ Integrált terminal kimenet
+- ✅ Server ready detection → böngésző automatikus megnyitás
+- ✅ Nincs `tasks.json` szükséges (egyszerűbb konfig)
+
+### Csak build futtatása (szerver nélkül)
+
+Ha csak az `index.html` generálást akarod tesztelni:
+1. Válaszd: "Build Only (Hybrid)"
+2. F5
+3. Az `index.html` frissül `window.UI5_ENVIRONMENT = 'hybrid'`-dal
 
 ---
 
@@ -283,13 +323,15 @@ UI5_MIDDLEWARE_SIMPLE_PROXY_BASEURI=http://masik-szerver:9000 npx ui5 serve --po
 | | CDN | Local | Backend | **Hybrid** |
 |---|---|---|---|---|
 | **Szerver** | http-server | ui5 serve | http-server | **ui5 serve + proxy** |
-| **UI5 forrás** | OpenUI5 CDN | node_modules / UI5 CLI cache | Backend (direkt) | **Backend (proxy-n keresztül)** |
+| **UI5 forrás** | SAPUI5 CDN | node_modules / UI5 CLI cache | Backend (direkt) | **Backend (proxy-n keresztül)** |
 | **CORS** | Nincs gond | Nincs gond | **VAN** probléma | **Nincs** gond |
 | **Offline** | ✗ Internet kell | ✓ | ✗ Backend kell | ✗ Backend kell |
 | **Transzportálható** | ✓ | ✓ | ✗ Hardkódolt IP | **✓** Env var-ral |
 | **SAP ajánlás** | Csak teszthez | Fejlesztéshez | Nem ajánlott | **Igen (reverse proxy)** |
 | **NPM parancs** | `start:cdn` | `start:local` | `start:backend` | **`start:hybrid`** |
-| **URL paraméter** | `?env=cdn` | `?env=local` | `?env=backend` | **`?env=hybrid`** |
+| **URL (v3.0)** | `http://localhost:8300/` | `http://localhost:8300/` | `http://localhost:8300/` | `http://localhost:8300/` |
+| **Build** | `build.js cdn` | `build.js local` | `build.js backend` | **`build.js hybrid`** |
+| **VSCode Launch** | ✓ | ✓ | ✓ | **✓** |
 
 ---
 
@@ -336,7 +378,21 @@ curl http://192.168.1.10:9000/ -v
 Nyisd meg a DevTools → Network tabot, és keresd a `/proxy/resources/sap-ui-core.js` kérést:
 - **404** → a proxy nem fut (rossz yaml config vagy nem `ui5 serve`-vel indítottad)
 - **502/503** → a backend nem válaszol
-- **Nincs kérés** → a `config.js`-ben nincs `hybrid` kulcs, vagy az `?env=hybrid` hiányzik az URL-ből
+- **Nincs kérés** → Ellenőrizd a Console-ban: `window.UI5_ENVIRONMENT` → kell hogy `'hybrid'` legyen
+  - Ha `undefined` vagy más érték: futtasd újra `node build.js hybrid`-et
+
+**v3.0 Troubleshooting:**
+```bash
+# 1. Ellenőrizd az index.html tartalmat
+grep "UI5_ENVIRONMENT" index.html
+# Várható: <script>window.UI5_ENVIRONMENT = 'hybrid';</script>
+
+# 2. Ha hiányzik vagy rossz, újra build
+node build.js hybrid
+
+# 3. Indítsd újra a szervert
+npm run serve:hybrid
+```
 
 ---
 
@@ -391,11 +447,17 @@ hybrid: {
 
 ## Gyors ellenőrző lista
 
-Új fejlesztő setup-ja:
+Új fejlesztő setup-ja (v3.0):
 
 - [ ] `git clone` + `npm install`
 - [ ] `.env.example` → `.env` másolás, backend cím beállítása
-- [ ] `npm run start:hybrid`
-- [ ] Böngészőben megjelenik az app
-- [ ] F12 → Console → `[UI5 Bootstrap] Environment: Hybrid (backend via proxy)`
+- [ ] `npm run start:hybrid` (build + serve egy parancsban)
+- [ ] Böngészőben megjelenik az app: `http://localhost:8300/`
+- [ ] F12 → Console → `window.UI5_ENVIRONMENT` → `"hybrid"` ✅
 - [ ] F12 → Network → `/proxy/resources/sap-ui-core.js` → 200 OK
+- [ ] Environment badge: "Hybrid (backend via proxy)" (3 mp után eltűnik)
+
+**VSCode Debug setup:**
+- [ ] `.vscode/launch.json` létezik (a projekt már tartalmazza)
+- [ ] F5 → "UI5 Splash - Hybrid Mode" → Szerver elindul + böngésző megnyílik
+- [ ] Breakpoint az `ui5-bootstrap.js`-ben → Debug működik

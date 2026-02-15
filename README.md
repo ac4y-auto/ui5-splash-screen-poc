@@ -23,26 +23,106 @@ npm install
 
 ### Indítás
 
+**Új (v3.0)**: Az üzemmód a szerver indításakor fix, nem URL paraméter!
+
+#### 🌟 Smart Start (Ajánlott)
+
+Automatikusan kezeli a port konfliktusokat:
+
 ```bash
 # CDN verzió (alapértelmezett)
 npm start
 
-# Local verzió (node_modules)
-npm run start:local
-
-# Backend verzió (192.168.1.10:9000)
-npm run start:backend
+# Vagy explicit módon
+npm run smart-start:cdn
+npm run smart-start:local
+npm run smart-start:backend
+npm run smart-start:hybrid
 ```
 
-## 📁 Fájlok
+**Smart Start funkciók:**
+- ✅ Ellenőrzi, hogy a port (8300) foglalt-e
+- ✅ Megnézi, hogy az a process ehhez a projekthez tartozik-e (`http-server` vagy `ui5 serve`)
+- ✅ Ha igen, automatikusan leöli és újraindítja a szervert
+- ✅ Ha nem (más projekt folyamata), hibát dob és NEM öli le
 
-### Fő Fájlok
-- `index-configurable.html` - **🌟 Ajánlott!** Konfigurálható verzió (40 sor, modular)
-- `index-minimal.html` - **ÚJ!** Minimális példa (clean, jól kommentált)
-- `index.html` - Eredeti CDN verzió (kompatibilitás, legacy)
-- `index-demo.html` - Demo verzió (CSS animációval)
-- `config.js` - Környezeti konfiguráció
+**Példa kimenet:**
+```
+🚀 Smart Start - CDN Mode
+   Port: 8300
+   Project: ui5-splash-screen-poc
+
+⚠️  Port 8300 is already in use (PID: 12345)
+✓  Process belongs to this project (ui5-splash-screen-poc)
+🔄 Killing existing process (PID: 12345)...
+✅ Process killed successfully
+✓  Port 8300 is now free
+
+🔧 Building for environment: cdn...
+✅ Environment 'cdn' injected into index.html
+
+🚀 Starting server...
+```
+
+#### Manuális Start
+
+Ha Smart Start problémás, használd a manuális módot:
+
+```bash
+npm run start:cdn
+npm run start:local
+npm run start:backend
+npm run start:hybrid
+```
+
+**Hogyan működik?**
+- A `start:*` parancsok futtatják a `build.js` scriptet, amely beinjektálja a környezeti változót az `index.html`-be
+- Ezután elindítják a megfelelő szervert (http-server vagy UI5 CLI)
+- **Nincs szükség** URL paraméterre (`?env=cdn`), a konfiguráció build-time történik!
+
+### Opcionális PORT Paraméter
+
+Az alapértelmezett port **8300**, de felülírható környezeti változóval:
+
+```bash
+# Default port (8300)
+npm start
+
+# Custom port
+PORT=9000 npm start
+PORT=8080 npm run start:local
+PORT=9090 npm run start:backend
+```
+
+**Szintaxis:** `${PORT:-8300}`
+- `PORT` környezeti változóból olvas
+- Ha nincs beállítva, **8300** az alapértelmezett
+- Cross-platform (macOS, Linux, Windows Git Bash)
+
+## 📁 Projekt Struktúra
+
+### Gyökér
+- `index.html` - **🌟 Főoldal** (generált fájl, ne szerkeszd közvetlenül!)
+- `index.template.html` - **📝 Template** (ezt szerkeszd, ha változtatni akarsz)
+- `config.js` - Környezeti konfiguráció (build-time injection)
+- `build.js` - Build script (környezet beinjektálása a template-ből)
 - `package.json` - NPM scriptek
+
+### Működési Dokumentumok
+
+📚 **Minden működési és fejlesztési dokumentum a [`hopper/`](hopper/) mappában található!**
+
+**Gyors linkek**:
+- [📘 RUNBOOK.md](hopper/RUNBOOK.md) - Operációs útmutató (kritikus szabályok)
+- [📝 DEBRIEF_v3.1.md](hopper/DEBRIEF_v3.1.md) - Session debrief (tanulságok)
+- [🚀 SMART_START_GUIDE.md](hopper/SMART_START_GUIDE.md) - Smart Start használat
+- [📚 hopper/README.md](hopper/README.md) - Teljes dokumentációs index
+
+### Legacy Fájlok (archív)
+- `legacy/index-configurable.html` - Eredeti konfigurálható verzió (URL paraméter alapú)
+- `legacy/index-minimal.html` - Minimális példa
+- `legacy/index.html` - Eredeti CDN verzió
+- `legacy/index-demo.html` - Demo verzió CSS animációval
 
 ### Splash Screen Modulok (v2.0)
 - `splash-screen.css` - Splash screen stílusok
@@ -88,10 +168,7 @@ npm start
 npm run start:cdn
 ```
 
-**URL paraméterrel**:
-```
-http://localhost:8300/index-configurable.html?env=cdn
-```
+**URL**: `http://localhost:8300/` (automatikusan megnyílik)
 
 ### 2. Local Mód (node_modules)
 

@@ -3,12 +3,20 @@
   "version": "1.0.0",
   "description": "UI5 Splash Screen POC with multiple environment configurations",
   "scripts": {
-    "start": "npm run start:cdn",
-    "start:cdn": "http-server -p 8300 --cors -o /index-configurable.html?env=cdn",
-    "start:local": "npx ui5 serve --port 8300 --open index-configurable.html?env=local",
-    "start:backend": "http-server -p 8300 --cors -o /index-configurable.html?env=backend",
-    "start:hybrid": "npx ui5 serve --port 8300 --config ui5-backend.yaml --open index-configurable.html?env=hybrid",
-    "build": "node build.js"
+    "start": "npm run smart-start:cdn",
+    "start:cdn": "node build.js cdn && http-server -p ${PORT:-8300} --cors -o",
+    "start:local": "node build.js local && npx ui5 serve --port ${PORT:-8300} --open",
+    "start:backend": "node build.js backend && http-server -p ${PORT:-8300} --cors -o",
+    "start:hybrid": "node build.js hybrid && npx ui5 serve --port ${PORT:-8300} --config ui5-backend.yaml --open",
+    "smart-start:cdn": "node start.js cdn",
+    "smart-start:local": "node start.js local",
+    "smart-start:backend": "node start.js backend",
+    "smart-start:hybrid": "node start.js hybrid",
+    "build": "node build.js",
+    "serve:cdn": "http-server -p ${PORT:-8300} --cors -o",
+    "serve:local": "npx ui5 serve --port ${PORT:-8300} --open",
+    "serve:backend": "http-server -p ${PORT:-8300} --cors -o",
+    "serve:hybrid": "npx ui5 serve --port ${PORT:-8300} --config ui5-backend.yaml --open"
   },
   "keywords": [
     "ui5",
