@@ -19,15 +19,18 @@
 
 ---
 
-## 3 UZZEMMOD (YAML konfigok)
+## 4 UZZEMMOD (YAML konfigok)
 
 | Mod | YAML fajl | SAPUI5 forras | Proxy | Halozat |
 |-----|-----------|---------------|-------|---------|
 | **Local** (default) | `ui5.yaml` | UI5 CLI framework (node_modules) | Nincs | Nem kell |
 | **CDN** | `ui5-cdn.yaml` | sapui5.hana.ondemand.com via proxy | fiori-tools-proxy | Internet |
 | **Backend** | `ui5-backend.yaml` | CDN + backend 192.168.1.10:9000 | fiori-tools-proxy | Internet + LAN |
+| **Hybrid** | `ui5-hybrid.yaml` | Lokalis framework cache (~/.ui5/) | fiori-tools-proxy (/sap) | LAN |
 
 **Fontos**: Az `index.html` mindig ugyanaz. A mod a YAML konfiggal van meghatarozva szerver inditaskor.
+
+**Hybrid mod**: A `/resources` es `/test-resources` a lokalis framework szolgalja ki (gyors), a `/sap` a backend-re proxy-zodik (valodi adat).
 
 ---
 
@@ -41,15 +44,30 @@
 | `npm run start:local` | Local | Explicit local mod |
 | `npm run start:cdn` | CDN | ui5-cdn.yaml, SAPUI5 CDN proxy |
 | `npm run start:backend` | Backend | ui5-backend.yaml, CDN + backend proxy |
+| `npm run start:hybrid` | Hybrid | ui5-hybrid.yaml, lokalis UI5 + backend proxy |
 
 ### Smart Start parancsok (port-kezeles + fiori run)
 
 | Parancs | Mod | Leiras |
 |---------|-----|--------|
-| `npm run smart-start` | Local | Port ellenorzes + auto-kill + start |
+| `npm run smart-start` | Local | Port ellenorzes + start |
 | `npm run smart-start:local` | Local | Explicit local |
 | `npm run smart-start:cdn` | CDN | Port ellenorzes + CDN mod |
 | `npm run smart-start:backend` | Backend | Port ellenorzes + backend mod |
+| `npm run smart-start:hybrid` | Hybrid | Port ellenorzes + hybrid mod |
+
+### Purge (port felszabaditas)
+
+| Parancs | Leiras |
+|---------|--------|
+| `npm run purge` | Leallitja a projekt processzt a porton (8300) |
+| `PORT=9000 npm run purge` | Custom port purge |
+| `npm run purge && npm run start:hybrid` | Purge + azonnali ujrainditas |
+| `npm run purge && npm run smart-start` | Purge + smart start |
+
+**Fontos**: A `purge` csak projekthez tartozo processzt ol le (ui5-splash-screen-poc/fiori/ui5 markerek). Ismeretlen processzt visszautasitja.
+
+**Megjegyzes**: A `start.js` (Smart Start) NEM oli le a processzt — csak ellenorzi, hogy a port szabad-e. Ha foglalt, hasznald elobb a `npm run purge`-ot.
 
 ### Egyeb
 ```bash
@@ -79,8 +97,10 @@ npm list                       # Fuggosegek ellenorzese
 | `ui5.yaml` | Local mod (default) - SAPUI5 framework, nincs proxy |
 | `ui5-cdn.yaml` | CDN mod - fiori-tools-proxy a sapui5.hana.ondemand.com-rol |
 | `ui5-backend.yaml` | Backend mod - CDN + backend proxy (192.168.1.10:9000) |
+| `ui5-hybrid.yaml` | Hybrid mod - lokalis UI5 + backend proxy (192.168.1.10:9000) |
 | `package.json` | NPM konfiguracio, script-ek |
-| `start.js` | Smart Start script (port ellenorzes + auto-kill) |
+| `start.js` | Smart Start script (port ellenorzes, NEM ol le processzt) |
+| `purge.js` | Purge script (biztonsagos process leallitas a porton) |
 
 ### Splash Screen eszkozok
 | Fajl | Meret |
@@ -126,8 +146,12 @@ var LOAD_TIMEOUT_MS = 15000; // 15 masodperc utan error overlay
 
 ### Port foglalt
 ```bash
-# Smart start (automatikus port-kezeles):
-npm run smart-start
+# Purge (ajanlott):
+npm run purge                        # Biztonsagos leallitas
+npm run smart-start                  # Majd ujrainditas
+
+# Egy lepesben:
+npm run purge && npm run start:hybrid
 
 # Manualis:
 lsof -ti:8300
@@ -190,10 +214,10 @@ document.getElementById('splash-screen').classList.remove('fade-out');
 ```bash
 # YAML-ok ellenorzese (SAPUI5 kell, NEM OpenUI5!)
 grep "sapui5.hana.ondemand.com" ui5-cdn.yaml ui5-backend.yaml
-grep "name: SAPUI5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml
+grep "name: SAPUI5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml ui5-hybrid.yaml
 
 # OpenUI5 keresese (URESNEK kell lennie!)
-grep -ri "openui5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml index.html
+grep -ri "openui5" ui5.yaml ui5-cdn.yaml ui5-backend.yaml ui5-hybrid.yaml index.html
 ```
 
 ---
@@ -256,5 +280,5 @@ git status
 ---
 
 **Utolso frissites**: 2026-02-15
-**Verzio**: 3.0 (fiori run architektura)
+**Verzio**: 4.0 (hybrid mod + purge parancs)
 **Allapot**: Production Ready

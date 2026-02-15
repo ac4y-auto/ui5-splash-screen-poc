@@ -1,121 +1,68 @@
-# Hybrid mód – Fejlesztői útmutató
+# Hybrid mod -- Fejlesztoi utmutato (v4.0)
 
-> **Cél:** UI5 alkalmazás fejlesztése helyi gépen úgy, hogy a UI5 library-kat egy távoli backend
-> szerverről tölti be **reverse proxy-n keresztül**, CORS probléma nélkül.
-
----
-
-## Mi az a Hybrid mód?
-
-A Hybrid mód ötvözi a helyi fejlesztés kényelmét a backend szerver UI5 resource-aival:
-
-```
-Böngésző (localhost:8300)
-    │
-    ├── /index-configurable.html    ← helyi fájl (ui5 serve kiszolgálja)
-    ├── /Component.js               ← helyi fájl
-    ├── /view/App.view.xml          ← helyi fájl
-    │
-    └── /proxy/resources/sap-ui-core.js
-            │
-            ▼ (ui5-middleware-simpleproxy)
-        http://192.168.1.10:9000/resources/sap-ui-core.js
-                                        ← backend szerver UI5 library-k
-```
-
-**Minden kérés same-origin (localhost:8300)** → nincs CORS hiba, nincs mixed content warning.
+> **v4.0** -- Teljes ujrairas. Nincs `build.js`, nincs environment injection, nincs `http-server`.
+> Minden `fiori run` + YAML config alapu.
 
 ---
 
-## Miért kell ez?
+## 1. Mi a Hybrid mod?
 
-### A probléma: Backend mód (direct) hibái
+A Hybrid mod a legjobb mindket vilagbol:
 
-A közvetlen backend mód (`?env=backend`) így tölti be a UI5-öt:
-```javascript
-url: 'http://192.168.1.10:9000/resources/sap-ui-core.js'
+- **UI5 framework** a **lokalis `~/.ui5/` cache**-bol toltodik (gyors, offline-kepes)
+- **Backend `/sap` OData service**-ek a **SAP szerverre proxyzodnak** (`fiori-tools-proxy`)
+- Az `index.html` **statikus** -- semmilyen build vagy injection nem szukseges
+
+```
+Bongeszo (localhost:8300)
+    |
+    |-- /index.html               <-- lokalis fajl (statikus)
+    |-- /Component.js             <-- lokalis fajl
+    |-- /resources/sap-ui-core.js <-- ~/.ui5/ cache (framework szekcionbol)
+    |
+    +-- /sap/opu/odata/...        <-- fiori-tools-proxy --> SAP szerver (192.168.1.10:9000)
 ```
 
-Ez három okból problémás:
-1. **CORS hiba** – a böngésző blokkolja a cross-origin kérést (`localhost:8300` → `192.168.1.10:9000`)
-2. **Hardkódolt IP** – nem hordozható környezetek között (DEV/QAS/PRD)
-3. **Nincs cache buster** – verziófrissítésnél nem invalidálódik a cache
-
-### A megoldás: Hybrid mód (proxy)
-
-```javascript
-url: '/proxy/resources/sap-ui-core.js'
-```
-
-- Relatív URL → **same-origin**, nincs CORS
-- A proxy middleware átirányítja a kérést a backend szerverre
-- A backend cím **egyetlen helyen** van konfigurálva (`ui5-backend.yaml`)
-- Env var-ral felülírható (`.env` fájl) → transzportálható
+A UI5 library-kat a YAML `framework` szekcioja biztositja a lokalis cache-bol.
+A `/sap` utvonalat a `fiori-tools-proxy` tovabbitja a backend szerverre.
+Minden mas lokalis fajl.
 
 ---
 
-## Architektúra
+## 2. Mikor hasznald?
 
-### Fájlok és szerepük
+**Fejlesztes valodi SAP backend-del, de gyors UI5 betoltessel.**
 
-```
-ui5-splash-screen-poc/
-│
-├── ui5.yaml                  ← Alap config (CDN/Local módhoz, proxy nélkül)
-├── ui5-backend.yaml          ← Hybrid config (simpleproxy middleware-rel)
-├── config.js                 ← Böngésző oldali env config (hybrid URL: /proxy/...)
-├── package.json              ← npm scripts (start:hybrid → ui5 serve --config ui5-backend.yaml)
-├── .env.example              ← Env var template (backend URL felülírás)
-│
-├── .vscode/
-│   ├── launch.json           ← "Hybrid mód" debug konfiguráció
-│   └── tasks.json            ← "serve:hybrid" háttér task
-│
-└── node_modules/
-    └── ui5-middleware-simpleproxy/  ← A proxy middleware (npm csomag)
-```
+- Kell OData service a SAP szerverrol (`/sap/opu/odata/...`)
+- De a UI5 framework betoltest nem akarod a halozattol fuggeteni
+- A lokalis `~/.ui5/` cache pillanatok alatt kiszolgalja a SAPUI5-ot
+- Nincs CORS problema, mert a proxy same-origin-kent szolgalja ki
 
-### Kérés útvonala
-
-```
-1. Böngésző kéri:  GET http://localhost:8300/proxy/resources/sap-ui-core.js
-                                                 │
-2. ui5 serve fogadja a kérést                    │
-                                                 │
-3. simpleproxy middleware egyeztet:               │
-   mountPath: /proxy  ← egyezik!                │
-                                                 │
-4. Proxy továbbít:    GET http://192.168.1.10:9000/resources/sap-ui-core.js
-   (a /proxy prefix levágva, baseUri elé ragasztva)
-                                                 │
-5. Backend válaszol:  200 OK + sap-ui-core.js    │
-                                                 │
-6. Proxy visszaküldi a böngészőnek               │
-   (same-origin, nincs CORS header szükséges)
-```
+**Ne hasznald, ha:**
+- Nincs szukseged backend service-re --> hasznald a **local** modot
+- A UI5-ot is a szerverrol akarod --> hasznald a **backend** modot
 
 ---
 
-## Beüzemelés lépésről lépésre
+## 3. A 4 mod osszehasonlitasa
 
-### Előfeltételek
+| | **Local** | **CDN** | **Backend** | **Hybrid** |
+|---|---|---|---|---|
+| **UI5 forras** | `~/.ui5/` cache | SAP CDN (internet) | SAP szerver | **`~/.ui5/` cache** |
+| **Backend `/sap`** | nincs | nincs | SAP szerver | **SAP szerver (proxy)** |
+| **YAML config** | `ui5.yaml` | `ui5-cdn.yaml` | `ui5-backend.yaml` | **`ui5-hybrid.yaml`** |
+| **framework szekcion** | van | nincs | nincs | **van** |
+| **fiori-tools-proxy** | nincs | CDN proxy | backend proxy | **backend proxy** |
+| **Offline UI5** | igen | nem | nem | **igen** |
+| **Offline backend** | -- | -- | nem | **nem** |
+| **NPM script** | `start:local` | `start:cdn` | `start:backend` | **`start:hybrid`** |
+| **Hasznalat** | UI-only fejlesztes | demo, teszteles | teljes SAP integracio | **fejlesztes + OData** |
 
-- Node.js 18+
-- npm 9+
-- A projekt már tartalmazza a szükséges dependency-ket
+---
 
-### 1. lépés: `ui5-middleware-simpleproxy` telepítése
+## 4. Konfiguracio
 
-Ha még nincs telepítve:
-```bash
-npm install --save-dev ui5-middleware-simpleproxy
-```
-
-> A mi projektünkben már benne van a `package.json`-ban.
-
-### 2. lépés: `ui5-backend.yaml` létrehozása
-
-Hozd létre a projekt gyökerében:
+A `ui5-hybrid.yaml` teljes tartalma:
 
 ```yaml
 specVersion: "3.0"
@@ -125,9 +72,9 @@ type: application
 resources:
   configuration:
     paths:
-      webapp: "."           # Ha a fájlok a gyökérben vannak (nem webapp/ mappában)
+      webapp: "."
 framework:
-  name: OpenUI5
+  name: SAPUI5
   version: "1.105.0"
   libraries:
     - name: sap.m
@@ -135,329 +82,232 @@ framework:
     - name: themelib_sap_horizon
 server:
   customMiddleware:
-    - name: ui5-middleware-simpleproxy
+    - name: fiori-tools-proxy
       afterMiddleware: compression
-      mountPath: /proxy                              # ← Ezen az útvonalon érhető el
       configuration:
-        baseUri: "http://192.168.1.10:9000"          # ← Backend szerver címe
-        strictSSL: false                             # ← Self-signed cert esetén
+        backend:
+          - path: /sap
+            url: http://192.168.1.10:9000
 ```
 
-**Fontos részletek:**
-- `mountPath: /proxy` – minden `/proxy/*` kérést a proxy kezeli
-- `baseUri` – a backend szerver alap URL-je (port-tal együtt)
-- `strictSSL: false` – ha a backend HTTPS-t használ self-signed tanúsítvánnyal
-- `afterMiddleware: compression` – a compression middleware után fut (ajánlott sorrend)
+**Kulcs elemek:**
 
-### 3. lépés: `config.js` – hybrid üzemmód hozzáadása
+- `framework` szekcion -- a UI5 library-kat a lokalis `~/.ui5/` cache-bol szolgalja ki. Ez a lenyegi kulonbseg a backend modhoz kepest.
+- `backend.path: /sap` -- **csak** a `/sap` kezdetu kereseket proxyzza a SAP szerverre. Minden mas lokalis marad.
+- `backend.url` -- a cel SAP szerver cime (IP es port).
 
-```javascript
-const UI5_CONFIGS = {
-    // ... meglévő módok (cdn, local, backend) ...
+**Osszehasonlitasul a `ui5-backend.yaml`** (ahol MINDEN a szerverrol jon):
 
-    hybrid: {
-        name: 'Hybrid (backend via proxy)',
-        url: '/proxy/resources/sap-ui-core.js',
-        description: 'Uses UI5 from backend server via local reverse proxy (CORS-safe)'
-    }
-};
+```yaml
+# ui5-backend.yaml -- NINCS framework szekcion!
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        backend:
+          - path: /sap
+            url: http://192.168.1.10:9000
+          - path: /resources          # <-- UI5 is a szerverrol
+            url: http://192.168.1.10:9000
+          - path: /test-resources     # <-- test-resources is a szerverrol
+            url: http://192.168.1.10:9000
 ```
 
-A lényeg: `/proxy/resources/sap-ui-core.js` – relatív URL, a `/proxy` prefix egyezik a
-`ui5-backend.yaml` `mountPath`-jával.
+---
 
-### 4. lépés: `package.json` – npm script
+## 5. Inditas
 
-**v3.0 Build-Based Workflow:**
-
-```json
-{
-  "scripts": {
-    "start:hybrid": "node build.js hybrid && npx ui5 serve --port 8300 --config ui5-backend.yaml --open",
-    "build": "node build.js",
-    "serve:hybrid": "npx ui5 serve --port 8300 --config ui5-backend.yaml --open"
-  }
-}
-```
-
-**Változás a v3.0-ban:**
-- ❌ **Régi (v2.0)**: URL paraméter (`?env=hybrid`) kell
-- ✅ **Új (v3.0)**: Build script injektálja a környezetet az `index.html`-be
-
-**Paraméterek:**
-- `node build.js hybrid` – Beinjektálja `window.UI5_ENVIRONMENT = 'hybrid'` az index.html-be
-- `--port 8300` – Fejlesztői szerver portja
-- `--config ui5-backend.yaml` – A proxy-s konfigurációt használja (nem az alap `ui5.yaml`-t)
-- `--open` – Automatikusan megnyitja a böngészőt a `http://localhost:8300/` címen
-
-**Nincs szükség URL paraméterre!** A `?env=hybrid` már **NEM kell**.
-
-### 5. lépés: Indítás
-
-**v3.0 Workflow:**
+### Egyszeru inditas
 
 ```bash
 npm run start:hybrid
 ```
 
-Várt kimenet:
+Ez a kovetkezot futtatja:
+```bash
+npx fiori run --port 8300 --config ui5-hybrid.yaml --open index.html
 ```
-🔧 Building for environment: hybrid
-✅ Environment 'hybrid' injected into index.html
-   window.UI5_ENVIRONMENT = 'hybrid'
 
-📝 You can now start the server with: npm run serve:hybrid
+### Smart Start (port-ellenorzessesel)
 
-info graph:helpers:ui5Framework Using OpenUI5 version: 1.105.0
+```bash
+npm run smart-start:hybrid
+```
+
+A `start.js` eloszor ellenorzi, hogy a port (8300) szabad-e, es csak utana indit.
+
+### Purge + Start (ha a port foglalt)
+
+```bash
+npm run purge && npm run start:hybrid
+```
+
+A `purge.js` megoli a porton levo folyamatot (csak ha a projekthez tartozik), majd ujraindithatod.
+
+### Vart kimenet
+
+```
+Smart Start
+   Port: 8300
+   Config: ui5-hybrid.yaml
+
+   Port 8300 is available
+   Starting fiori run...
+
+info server:custommiddleware:fiori-tools-proxy Backend: http://192.168.1.10:9000 -> /sap
+info graphHelpers:ui5Framework Using SAPUI5 version: 1.105.0
 Server started
 URL: http://localhost:8300
 ```
 
-Böngésző automatikusan megnyílik: `http://localhost:8300/` (nincs URL paraméter!)
-
-**Ellenőrzés böngészőben:**
-```javascript
-// F12 Console
-window.UI5_ENVIRONMENT  // → "hybrid"
-```
+A bongeszo automatikusan megnyilik: `http://localhost:8300/index.html`
 
 ---
 
-## VS Code integráció
+## 6. Hogyan mukodik?
 
-### launch.json (v3.0)
+A `fiori run` ket forrasbol szolgalja ki a tartalmat:
 
-**Új Node-alapú launch konfiguráció** (az `.vscode/launch.json` tartalmazza):
+### UI5 framework (lokalis cache)
 
-```json
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "UI5 Splash - Hybrid Mode",
-            "type": "node",
-            "request": "launch",
-            "runtimeExecutable": "npm",
-            "runtimeArgs": [
-                "run",
-                "start:hybrid"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "serverReadyAction": {
-                "pattern": "Server started",
-                "uriFormat": "http://localhost:8300",
-                "action": "openExternally"
-            }
-        },
-        {
-            "name": "Build Only (Hybrid)",
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceFolder}/build.js",
-            "args": ["hybrid"],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal"
-        }
-    ]
-}
+A YAML `framework` szekcioja miatt a `fiori run` a `~/.ui5/` konyvtarbol toltodik be:
+
+```
+GET /resources/sap-ui-core.js
+    --> ~/.ui5/framework/artifacts/.../sap-ui-core.js
 ```
 
-**Használat:**
-1. **F5** vagy Run → Start Debugging
-2. Válaszd: "UI5 Splash - Hybrid Mode"
-3. Build script fut → UI5 CLI elindul → Böngésző megnyílik
+Elso futtataskort a CLI automatikusan letolti a megadott verziot (1.105.0) a cache-be. A tovabbi inditasok azonnaliak.
 
-**Előnyök v3.0-ban:**
-- ✅ Automatikus build + serve egy lépésben
-- ✅ Integrált terminal kimenet
-- ✅ Server ready detection → böngésző automatikus megnyitás
-- ✅ Nincs `tasks.json` szükséges (egyszerűbb konfig)
+### Backend proxy (SAP szerver)
 
-### Csak build futtatása (szerver nélkül)
+A `fiori-tools-proxy` **kizarolag a `/sap` utvonalat** proxyzza:
 
-Ha csak az `index.html` generálást akarod tesztelni:
-1. Válaszd: "Build Only (Hybrid)"
-2. F5
-3. Az `index.html` frissül `window.UI5_ENVIRONMENT = 'hybrid'`-dal
+```
+GET /sap/opu/odata/sap/MY_SERVICE/$metadata
+    --> http://192.168.1.10:9000/sap/opu/odata/sap/MY_SERVICE/$metadata
+```
+
+Minden mas keres (HTML, JS, CSS, kepek) lokalis fajlkent kerul kiszolgalasra.
+
+### Mi NEM kerul proxyzasra
+
+| Utvonal | Forras |
+|---|---|
+| `/index.html` | lokalis fajl |
+| `/Component.js` | lokalis fajl |
+| `/resources/sap-ui-core.js` | `~/.ui5/` cache |
+| `/resources/sap/m/Button.js` | `~/.ui5/` cache |
+| `/sap/opu/odata/...` | **proxy --> SAP szerver** |
 
 ---
 
-## Backend cím felülírása
+## 7. SAP backend beallitasa
 
-### A. opció: `.env` fájl (ajánlott)
+A backend szerver cimet a `ui5-hybrid.yaml` fajlban allithatod:
 
-A `ui5-middleware-simpleproxy` automatikusan támogatja a `.env` fájlt:
-
-```bash
-# .env (a projekt gyökerében, NE COMMITOLD!)
-UI5_MIDDLEWARE_SIMPLE_PROXY_BASEURI=http://192.168.1.10:9000
-```
-
-Ez felülírja a `ui5-backend.yaml`-ban lévő `baseUri` értéket.
-
-**Előnyök:**
-- Fejlesztőnként eltérő backend cím
-- Nem kell a yaml-t módosítani
-- `.gitignore`-ban tartható
-
-### B. opció: `ui5-backend.yaml` módosítása
-
-Közvetlenül a yaml fájlban:
 ```yaml
 configuration:
-  baseUri: "http://uj-szerver:9000"
+  backend:
+    - path: /sap
+      url: http://192.168.1.10:9000    # <-- ezt modositsd
 ```
 
-### C. opció: Környezeti változó parancssorból
+### Peldak
 
-```bash
-UI5_MIDDLEWARE_SIMPLE_PROXY_BASEURI=http://masik-szerver:9000 npx ui5 serve --port 8300 --config ui5-backend.yaml
-```
-
----
-
-## A 4 üzemmód összehasonlítása
-
-| | CDN | Local | Backend | **Hybrid** |
-|---|---|---|---|---|
-| **Szerver** | http-server | ui5 serve | http-server | **ui5 serve + proxy** |
-| **UI5 forrás** | SAPUI5 CDN | node_modules / UI5 CLI cache | Backend (direkt) | **Backend (proxy-n keresztül)** |
-| **CORS** | Nincs gond | Nincs gond | **VAN** probléma | **Nincs** gond |
-| **Offline** | ✗ Internet kell | ✓ | ✗ Backend kell | ✗ Backend kell |
-| **Transzportálható** | ✓ | ✓ | ✗ Hardkódolt IP | **✓** Env var-ral |
-| **SAP ajánlás** | Csak teszthez | Fejlesztéshez | Nem ajánlott | **Igen (reverse proxy)** |
-| **NPM parancs** | `start:cdn` | `start:local` | `start:backend` | **`start:hybrid`** |
-| **URL (v3.0)** | `http://localhost:8300/` | `http://localhost:8300/` | `http://localhost:8300/` | `http://localhost:8300/` |
-| **Build** | `build.js cdn` | `build.js local` | `build.js backend` | **`build.js hybrid`** |
-| **VSCode Launch** | ✓ | ✓ | ✓ | **✓** |
-
----
-
-## Hibakeresés
-
-### A proxy nem továbbít (404)
-
-**Ellenőrizd:**
-1. A `mountPath` egyezik a `config.js`-ben lévő URL prefix-szel?
-   - yaml: `mountPath: /proxy`
-   - config.js: `url: '/proxy/resources/sap-ui-core.js'`
-2. A `baseUri` helyes? (protokoll + host + port)
-3. A backend szerver fut és elérhető?
-   ```bash
-   curl http://192.168.1.10:9000/resources/sap-ui-core.js -I
-   ```
-
-### "Unable to find source directory 'webapp'"
-
-Hiányzik a `resources.configuration.paths.webapp` a yaml-ból:
 ```yaml
-resources:
-  configuration:
-    paths:
-      webapp: "."
+# Lokalis halozati SAP szerver
+url: http://192.168.1.10:9000
+
+# SAP Cloud Connector
+url: https://my-sap-system.company.com:443
+
+# Lokalis mock server
+url: http://localhost:3000
 ```
 
-### "Duplicate framework dependency definition(s)"
+### Tovabbi backend utvonalak hozzaadasa
 
-A `package.json`-ban lévő `@openui5/*` csomagok ütköznek a `ui5.yaml` framework szekciójával.
-**Megoldás:** Töröld az `@openui5/*` csomagokat a `package.json`-ból.
-Részletek: [OPENUI5_TO_SAPUI5_MIGRATION.md](./OPENUI5_TO_SAPUI5_MIGRATION.md)
+Ha a `/sap`-on kivul mas utvonalat is proxyzni kell:
 
-### ECONNREFUSED / timeout
+```yaml
+configuration:
+  backend:
+    - path: /sap
+      url: http://192.168.1.10:9000
+    - path: /custom-api
+      url: http://192.168.1.10:9000
+```
 
-A backend szerver nem elérhető. Ellenőrizd:
+---
+
+## 8. Hibakereses
+
+### Error overlay (503 Service Unavailable)
+
+Ha a SAP szerver nem elerheto, a `fiori-tools-proxy` 503-as hibat ad.
+
+**Ellenorizd:**
 ```bash
+# Backend elerheto-e?
+curl -I http://192.168.1.10:9000/sap/
 ping 192.168.1.10
-curl http://192.168.1.10:9000/ -v
 ```
 
-### Böngésző konzolban "Failed to load UI5"
+### F12 Network tab
 
-Nyisd meg a DevTools → Network tabot, és keresd a `/proxy/resources/sap-ui-core.js` kérést:
-- **404** → a proxy nem fut (rossz yaml config vagy nem `ui5 serve`-vel indítottad)
-- **502/503** → a backend nem válaszol
-- **Nincs kérés** → Ellenőrizd a Console-ban: `window.UI5_ENVIRONMENT` → kell hogy `'hybrid'` legyen
-  - Ha `undefined` vagy más érték: futtasd újra `node build.js hybrid`-et
+Nyisd meg a DevTools Network tabot es szurd a kereseket:
 
-**v3.0 Troubleshooting:**
+| Amit keress | Vart eredmeny |
+|---|---|
+| `sap-ui-core.js` | **200 OK** -- `~/.ui5/` cache-bol |
+| `/sap/opu/odata/...` | **200 OK** -- proxy-n keresztul |
+| `/sap/...` es **503** | Backend szerver nem elerheto |
+| `/sap/...` es **404** | A path nincs a YAML backend listaban |
+
+### UI5 nem toltodik be
+
+Ha a `resources/sap-ui-core.js` 404-et ad:
+
+1. Ellenorizd, hogy a `framework` szekcion benne van-e a `ui5-hybrid.yaml`-ban
+2. Ellenorizd a verziot: `framework.version: "1.105.0"`
+3. Toroltesd a cache-t es probalad ujra:
+   ```bash
+   rm -rf ~/.ui5/framework
+   npm run start:hybrid
+   ```
+   Az elso inditas ujra letolti a framework-ot.
+
+### Port foglalt
+
 ```bash
-# 1. Ellenőrizd az index.html tartalmat
-grep "UI5_ENVIRONMENT" index.html
-# Várható: <script>window.UI5_ENVIRONMENT = 'hybrid';</script>
+# Ki hasznalja a portot?
+lsof -ti:8300
 
-# 2. Ha hiányzik vagy rossz, újra build
-node build.js hybrid
-
-# 3. Indítsd újra a szervert
-npm run serve:hybrid
+# Purge-olj es inditsd ujra
+npm run purge && npm run start:hybrid
 ```
 
 ---
 
-## Tippek
+## 9. Osszehasonlitas backend moddal
 
-### Több backend proxy egyszerre
+Ez a ket mod a leggyakoribb forrasza az osszetevesztesnek. A kulonbseg:
 
-Ha több backend szolgáltatásra van szükség (pl. UI5 + OData):
+| | **Backend mod** | **Hybrid mod** |
+|---|---|---|
+| **YAML** | `ui5-backend.yaml` | `ui5-hybrid.yaml` |
+| **UI5 forras** | SAP szerver (proxy) | **lokalis `~/.ui5/` cache** |
+| **`/resources` proxy** | igen | **nem** |
+| **`/sap` proxy** | igen | **igen** |
+| **`framework` szekcion** | **nincs** | **van** |
+| **UI5 betoltes sebesseg** | halozatfuggo | **azonnali (lokalis)** |
+| **Offline UI5** | nem | **igen** |
+| **Mikor hasznald** | ha a szerver UI5 verziojat kell tesztelni | **fejlesztes OData-val** |
 
-```yaml
-server:
-  customMiddleware:
-    - name: ui5-middleware-simpleproxy
-      afterMiddleware: compression
-      mountPath: /proxy
-      configuration:
-        baseUri: "http://192.168.1.10:9000"
-        strictSSL: false
-    - name: ui5-middleware-simpleproxy
-      afterMiddleware: compression
-      mountPath: /odata
-      configuration:
-        baseUri: "http://192.168.1.10:8080/sap/opu/odata"
-        strictSSL: false
-```
+**Egyszeru szamalyban:**
+- **Backend mod**: MINDEN a szerverrol jon (`/resources`, `/test-resources`, `/sap`)
+- **Hybrid mod**: **csak `/sap`** a szerverrol, UI5 a lokalis cache-bol
 
-### Basic Auth a backend felé
-
-```yaml
-configuration:
-  baseUri: "http://192.168.1.10:9000"
-  username: "SAP_USER"
-  password: "SAP_PASS"
-```
-
-Vagy `.env` fájlban:
-```bash
-UI5_MIDDLEWARE_SIMPLE_PROXY_USERNAME=SAP_USER
-UI5_MIDDLEWARE_SIMPLE_PROXY_PASSWORD=SAP_PASS
-```
-
-### Cache buster (produktív backend)
-
-Ha a backend támogatja a cache buster-t:
-```javascript
-hybrid: {
-    url: '/proxy/resources/sap-ui-cachebuster/sap-ui-core.js'
-}
-```
-
----
-
-## Gyors ellenőrző lista
-
-Új fejlesztő setup-ja (v3.0):
-
-- [ ] `git clone` + `npm install`
-- [ ] `.env.example` → `.env` másolás, backend cím beállítása
-- [ ] `npm run start:hybrid` (build + serve egy parancsban)
-- [ ] Böngészőben megjelenik az app: `http://localhost:8300/`
-- [ ] F12 → Console → `window.UI5_ENVIRONMENT` → `"hybrid"` ✅
-- [ ] F12 → Network → `/proxy/resources/sap-ui-core.js` → 200 OK
-- [ ] Environment badge: "Hybrid (backend via proxy)" (3 mp után eltűnik)
-
-**VSCode Debug setup:**
-- [ ] `.vscode/launch.json` létezik (a projekt már tartalmazza)
-- [ ] F5 → "UI5 Splash - Hybrid Mode" → Szerver elindul + böngésző megnyílik
-- [ ] Breakpoint az `ui5-bootstrap.js`-ben → Debug működik
+Ha nem biztos melyiket valaszd: **hasznald a hybrid modot.** Gyorsabb, offline-kepes a UI5-re nezve, es a legtobb fejlesztesi szcenariohoz megfelel.

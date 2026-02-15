@@ -16,6 +16,7 @@ npm install
 | `npm run smart-start:local` | Smart Start Local | Local | 8300 |
 | `npm run smart-start:cdn` | Smart Start CDN | CDN proxy | 8300 |
 | `npm run smart-start:backend` | Smart Start Backend | CDN + Backend proxy | 8300 |
+| `npm run smart-start:hybrid` | Smart Start Hybrid | Local UI5 + Backend proxy | 8300 |
 
 ### Manualis (halado)
 
@@ -25,15 +26,17 @@ npm install
 | `npm run start:local` | Local mod | Local | 8300 |
 | `npm run start:cdn` | CDN proxy mod | CDN proxy | 8300 |
 | `npm run start:backend` | CDN + Backend proxy mod | CDN + Backend proxy | 8300 |
+| `npm run start:hybrid` | Local UI5 + Backend proxy mod | Local UI5 + Backend proxy | 8300 |
 
 ## Melyiket hasznaljam?
 
 - **Gyors teszt kell?** --> `npm start` (Local mod, nincs internet szukseges)
 - **SAP CDN-rol akarok tolteni?** --> `npm run smart-start:cdn`
 - **Van backend szerver (192.168.1.10:9000)?** --> `npm run smart-start:backend`
-- **Port foglalt hiba?** --> Barmelyik `smart-start:*` automatikusan kezeli!
+- **Backend kell, de gyors UI5 betoltes is?** --> `npm run smart-start:hybrid`
+- **Port foglalt hiba?** --> `npm run purge` majd inditsd ujra!
 
-## 3 Uzemeltetesi Mod
+## 4 Uzemeltetesi Mod
 
 ### Local (alapertelmezett)
 
@@ -56,14 +59,24 @@ npm install
 - **Internet szukseges**: Igen + elerheto backend szerver
 - **Mikor hasznald**: Ha backend szerverre is szukseged van (OData, stb.)
 
+### Hybrid
+
+- **Konfiguracio**: `ui5-hybrid.yaml`
+- **SAPUI5 forras**: lokalis framework cache (`~/.ui5/`, SAPUI5 1.105.0)
+- **`/resources` es `/test-resources`**: a framework szolgalja ki lokalisan (NEM proxy-zott)
+- **Backend proxy**: `/sap` --> `http://192.168.1.10:9000`
+- **Internet szukseges**: Nem (csak elerheto backend szerver)
+- **Mikor hasznald**: Fejlesztes valodi SAP backend-del, de gyors UI5 betoltessel
+
 ## Smart Start vs Manualis
 
 **Smart Start** (`npm run smart-start` / `npm run smart-start:*`):
 - Ellenorzi, hogy a port (8300) foglalt-e
-- Csak projekthez tartozo processt oli le (biztonsagos)
+- Ha foglalt, kiirja a hibauzzenetet es javasolja a `npm run purge`-ot
+- NEM oli le automatikusan a processt — hasznald a `npm run purge`-ot elotte
 - `fiori run` inditas egy parancsban
 - Ajanlott mindennapi hasznalatra
-- Elerheto: `smart-start`, `smart-start:cdn`, `smart-start:local`, `smart-start:backend`
+- Elerheto: `smart-start`, `smart-start:local`, `smart-start:cdn`, `smart-start:backend`, `smart-start:hybrid`
 
 **Manualis** (`npm start` / `npm run start:*`):
 - NEM kezeli a port konfliktusokat
@@ -114,10 +127,16 @@ $Env:PORT=9000; npm start
 
 **Megoldas 1 (Ajanlott)**:
 ```bash
-npm run smart-start  # Smart Start automatikusan kezeli
+npm run purge  # Biztonsagosan leallitja a projekt processzt a porton
+npm run smart-start  # Majd ujra inditas
 ```
 
-**Megoldas 2 (Manualis)**:
+**Megoldas 2 (Egy lepesben)**:
+```bash
+npm run purge && npm run start:hybrid  # Purge + azonnali inditas
+```
+
+**Megoldas 3 (Manualis)**:
 ```bash
 # macOS/Linux
 lsof -ti:8300 | xargs kill -9
@@ -126,6 +145,8 @@ lsof -ti:8300 | xargs kill -9
 netstat -ano | findstr :8300
 taskkill /PID <PID> /F
 ```
+
+**Megjegyzes**: A `purge` csak projekthez tartozo processzt ol le (ui5-splash-screen-poc/fiori/ui5). Ismeretlen processzt NEM bantja.
 
 ### "fiori: command not found"
 
@@ -143,7 +164,7 @@ Megoldas:
 - Ellenorizd, hogy a `fiori run` szerver fut-e
 - Local mod (`npm start`): futtasd ujra `npm install`
 - CDN mod: ellenorizd az internet kapcsolatot es a `sapui5.hana.ondemand.com` eleresehetoseget
-- Backend mod: ellenorizd, hogy a backend szerver elerheto-e a `http://192.168.1.10:9000` cimen
+- Backend/Hybrid mod: ellenorizd, hogy a backend szerver elerheto-e a `http://192.168.1.10:9000` cimen
 
 ### YAML konfiguracios hiba
 
@@ -152,6 +173,7 @@ Megoldas:
 cat ui5.yaml
 cat ui5-cdn.yaml
 cat ui5-backend.yaml
+cat ui5-hybrid.yaml
 ```
 
 A YAML fajlok `specVersion: "3.0"` formatumban vannak. A `fiori-tools-proxy` middleware konfiguracio a `server.customMiddleware` szekcioban talalhato.
@@ -161,6 +183,9 @@ A YAML fajlok `specVersion: "3.0"` formatumban vannak. A `fiori-tools-proxy` mid
 ```bash
 # Ctrl+C a futo terminalban
 
+# Vagy npm run purge (ajanlott)
+npm run purge                  # Biztonsagos, csak projekt processzt oli le
+
 # Vagy manualis kill
 lsof -ti:8300 | xargs kill -9  # macOS/Linux
 taskkill /PID <PID> /F         # Windows
@@ -168,4 +193,4 @@ taskkill /PID <PID> /F         # Windows
 
 ---
 
-**Pro Tip**: Hasznald a Smart Start-ot (`npm run smart-start`) minden napi inditashoz - automatikusan kezeli a port konfliktusokat!
+**Pro Tip**: Ha a port foglalt, hasznald a `npm run purge && npm run smart-start` kombinaciot — biztonsagosan leallitja a regi processzt es ujrainditja a szervert!

@@ -259,14 +259,31 @@ npm run start:cdn
 
 # Backend mod (ui5-backend.yaml, CDN + backend proxy 192.168.1.10:9000)
 npm run start:backend
+
+# Hybrid mod (ui5-hybrid.yaml, local UI5 + backend proxy 192.168.1.10:9000)
+npm run start:hybrid
 ```
 
-**Smart Start parancsok** (port-ellenorzes + autokilll + fiori run):
+**Smart Start parancsok** (port-ellenorzes + fiori run):
 ```bash
 npm run smart-start              # Local mod (alapertelmezett)
 npm run smart-start:cdn          # CDN mod
 npm run smart-start:local        # Local mod (explicit)
 npm run smart-start:backend      # Backend mod
+npm run smart-start:hybrid       # Hybrid mod (local UI5 + backend)
+```
+
+**Purge** (kulon process killer — kikerult a start.js-bol):
+```bash
+npm run purge                    # Leoli a projekt sajat folyamatat a porton
+```
+
+> **v4.0 valtozas:** A `start.js` NEM oli le a futo folyamatokat — csak port-ellenorzest vegez.
+> Ha a port foglalt, a `npm run purge` parancsot kell eloszor futtatni.
+
+**Ajanlott workflow (port foglaltsag eseten):**
+```bash
+npm run purge && npm run smart-start:hybrid
 ```
 
 **Hogyan mukodik?**
@@ -280,19 +297,24 @@ npm run smart-start:backend      # Backend mod
 
 ### Szerver Leallitas
 ```bash
+# Ajanlott: npm run purge (biztonsagos, csak sajat projektet oli le)
+npm run purge
+
 # macOS - Port hasznalat ellenorzese
 lsof -ti:8300
 
-# macOS - Process leallitasa
+# macOS - Process leallitasa (manualis)
 kill -9 $(lsof -ti:8300)
 ```
+
+**Purge biztonsag:** A `npm run purge` CSAK a projekt sajat folyamatait oli le (ui5-splash-screen-poc / fiori / ui5 markereket keresi a command line-ban). Mas alkalmazasokat **NEM** bant — megtagadja a leolest es hibauzenettel leall.
 
 ### Hatterben Futo Task Ellenorzese
 Ha a szerver task ID-vel fut, akkor a TaskOutput tool-lal ellenorizheto.
 
 ---
 
-## Environment Modok (3 YAML konfig)
+## Environment Modok (4 YAML konfig)
 
 **Egyetlen URL minden modhoz:** `http://localhost:8300/index.html`
 
@@ -315,13 +337,50 @@ Az uzzemmod a szerver inditasakor valasztott YAML konfiguracioval van megadva. A
 - LAN kapcsolat szukseges a backendhez
 - `npm run start:backend`
 
+### 4. Hybrid mod -- `ui5-hybrid.yaml`
+- **SAPUI5**: Local framework cache-bol (`~/.ui5/`, SAPUI5 1.105.0)
+- **Backend**: `/sap` utvonal proxy-zva a `http://192.168.1.10:9000` cimre
+- **`/resources` es `/test-resources`**: Lokalisan szolgalja a framework (NEM proxy-zott)
+- LAN kapcsolat szukseges a backendhez
+- `npm run start:hybrid`
+
+**YAML konfiguracio (ui5-hybrid.yaml):**
+```yaml
+specVersion: "3.0"
+metadata:
+  name: ui5-splash-screen-poc
+type: application
+resources:
+  configuration:
+    paths:
+      webapp: "."
+framework:
+  name: SAPUI5
+  version: "1.105.0"
+  libraries:
+    - name: sap.m
+    - name: sap.ui.core
+    - name: themelib_sap_horizon
+server:
+  customMiddleware:
+    - name: fiori-tools-proxy
+      afterMiddleware: compression
+      configuration:
+        backend:
+          - path: /sap
+            url: http://192.168.1.10:9000
+```
+
+> **Fontos:** A hybrid YAML-ban NINCS `ui5` szekcioja a `fiori-tools-proxy`-nak, mert a `/resources`-t es `/test-resources`-t a local framework szolgalja (a `framework` szekcion keresztul). Csak a `/sap` backend proxy van benne.
+
 ### Osszefoglalo
 
 | Mod | YAML | Proxy | SAPUI5 Forras | Halozat |
 |-----|------|-------|---------------|---------|
-| **Local** | `ui5.yaml` | Nincs | UI5 CLI framework | Nem kell (cache utan) |
+| **Local** | `ui5.yaml` | Nincs | UI5 CLI framework (~/.ui5/) | Nem kell (cache utan) |
 | **CDN** | `ui5-cdn.yaml` | fiori-tools-proxy | sapui5.hana.ondemand.com | Internet |
 | **Backend** | `ui5-backend.yaml` | fiori-tools-proxy | sapui5.hana.ondemand.com + backend | Internet + LAN |
+| **Hybrid** | `ui5-hybrid.yaml` | fiori-tools-proxy (csak backend) | UI5 CLI framework (~/.ui5/) + backend | LAN |
 
 ---
 
@@ -354,6 +413,7 @@ Az uzzemmod a szerver inditasakor valasztott YAML konfiguracioval van megadva. A
 - [ ] Local: `npm start` -> SAPUI5 a framework-bol
 - [ ] CDN: `npm run start:cdn` -> proxy a sapui5.hana.ondemand.com-rol
 - [ ] Backend: `npm run start:backend` -> CDN + backend proxy
+- [ ] Hybrid: `npm run start:hybrid` -> local UI5 framework + backend proxy
 
 ---
 
@@ -392,7 +452,7 @@ git push origin main
 ## Gyakori Muveletek
 
 ### YAML konfig modositas
-Backend URL valtoztatas (`ui5-backend.yaml`):
+Backend URL valtoztatas (`ui5-backend.yaml` vagy `ui5-hybrid.yaml`):
 ```yaml
 server:
   customMiddleware:
@@ -440,14 +500,18 @@ server:
 
 ### Port Foglalt Hiba
 ```bash
-# macOS - Ellenorizd mi hasznalja a portot
-lsof -ti:8300
+# Ajanlott: hasznald a purge-ot (biztonsagos, csak sajat projektet oli le)
+npm run purge
 
-# macOS - Allitsd le a folyamatot
-kill -9 $(lsof -ti:8300)
-
-# Vagy hasznald a smart-start-ot (automatikusan kezeli):
+# Majd inditsd ujra
 npm run smart-start
+
+# Vagy egyetlen sorban
+npm run purge && npm run smart-start
+
+# Manualis megoldas (macOS)
+lsof -ti:8300
+kill -9 $(lsof -ti:8300)
 ```
 
 ### Backend Nem Elerheto
@@ -532,4 +596,4 @@ npm run smart-start
 ---
 
 **Frissitve**: 2026-02-15
-**Verzio**: 2.0 (fiori run architektura)
+**Verzio**: 3.0 (fiori run architektura + hybrid mod + purge)

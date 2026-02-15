@@ -17,8 +17,9 @@ UI5-alapu **Splash Screen** implementacio WMS (Warehouse Management System) alka
 - App-controlled splash (manual show/hide API)
 - Video animacio WMS logoval
 - Error overlay UI5 betoltesi hibahoz (script error + 15s timeout)
-- Smart Start (auto port cleanup)
-- 3 working mode (Local, CDN, Backend) - YAML konfiguracioval
+- Smart Start (port check + szerver inditas)
+- Purge (kulon process killer — `npm run purge`)
+- 4 working mode (Local, CDN, Backend, Hybrid) - YAML konfiguracioval
 - fiori run + fiori-tools-proxy architektura
 - SAPUI5 ONLY (OpenUI5 FORBIDDEN)
 - Security hardened
@@ -55,16 +56,22 @@ UI5-alapu **Splash Screen** implementacio WMS (Warehouse Management System) alka
   - Error handling
 
 - [x] **Smart Start**
-  - Port conflict detection
-  - Auto cleanup (command-line based process identification)
-  - lsof -sTCP:LISTEN fix (csak LISTEN process)
+  - Port ellenorzes (foglalt port eseten hibauzenet + purge javaslat)
+  - NEM oli le a futo folyamatokat (lasd Purge)
   - fiori run inditas opcionalis --config parameterrel
-  - 3 mode: Local, CDN, Backend
+  - 4 mode: Local, CDN, Backend, Hybrid
+
+- [x] **Purge** (`npm run purge`)
+  - Kulon process killer — kikerult a start.js-bol
+  - Projekt-specifikus: csak ui5-splash-screen-poc / fiori / ui5 markerekkel rendelkezo folyamatokat ol le
+  - Mas alkalmazasokat megtagadja leolni (biztonsagi vedelem)
+  - lsof -sTCP:LISTEN fix (csak LISTEN process)
+  - Max 3 masodperc varakozas port felszabadulasra
 
 - [x] **fiori run Architektura (v4.0)**
   - Statikus index.html (nincs template/build lepes)
   - fiori-tools-proxy a SAPUI5 resources kiszolgalasara
-  - YAML-alapu konfiguracio (ui5.yaml, ui5-cdn.yaml, ui5-backend.yaml)
+  - YAML-alapu konfiguracio (ui5.yaml, ui5-cdn.yaml, ui5-backend.yaml, ui5-hybrid.yaml)
   - `resources/sap-ui-core.js` - egyseges bootstrap URL minden modban
 
 #### Security
@@ -171,8 +178,9 @@ ui5-splash-screen-poc/
 |-- Component.js                    # App-controlled splash integration
 |-- index.html                      # Static HTML (SAPUI5 bootstrap)
 |-- manifest.json                   # UI5 app descriptor
-|-- package.json                    # npm scripts & dependencies
-|-- start.js                        # Smart Start (port cleanup + fiori run)
+|-- package.json                    # npm scripts & dependencies (11 script)
+|-- start.js                        # Smart Start (port check + fiori run)
+|-- purge.js                        # Purge (kulon process killer)
 |-- ui5-error-handler.js            # UI5 load error detection + overlay
 |-- splash-screen.js                # Splash API (show/hide/isVisible)
 |-- splash-screen.css               # Splash + error overlay styles
@@ -181,6 +189,7 @@ ui5-splash-screen-poc/
 |-- ui5.yaml                        # Local mode config (default)
 |-- ui5-cdn.yaml                    # CDN mode config (fiori-tools-proxy -> SAP CDN)
 |-- ui5-backend.yaml                # Backend mode config (CDN + backend proxy)
+|-- ui5-hybrid.yaml                 # Hybrid mode config (local UI5 + backend proxy)
 |
 |-- view/                           # UI5 views
 |   +-- Main.view.xml               # Main view
@@ -251,6 +260,8 @@ ui5-splash-screen-poc/
 - `ui5.yaml` - Local mode konfiguracio
 - `ui5-cdn.yaml` - CDN mode konfiguracio (fiori-tools-proxy)
 - `ui5-backend.yaml` - Backend mode konfiguracio (fiori-tools-proxy + backend proxy)
+- `ui5-hybrid.yaml` - Hybrid mode konfiguracio (local UI5 framework + backend proxy)
+- `purge.js` - Kulon process killer (projekt-specifikus, kikerult a start.js-bol)
 
 ---
 
@@ -270,9 +281,10 @@ ui5-splash-screen-poc/
 - **npm**: Package management + scripts
 
 ### Konfiguracio
-- **ui5.yaml**: Local mode (SAPUI5 a node_modules-bol)
+- **ui5.yaml**: Local mode (SAPUI5 a local framework cache-bol)
 - **ui5-cdn.yaml**: CDN mode (fiori-tools-proxy -> sapui5.hana.ondemand.com)
 - **ui5-backend.yaml**: Backend mode (CDN + backend proxy -> 192.168.1.10:9000)
+- **ui5-hybrid.yaml**: Hybrid mode (local UI5 framework + backend proxy -> 192.168.1.10:9000)
 
 ### Development
 - **VSCode**: IDE
@@ -281,22 +293,34 @@ ui5-splash-screen-poc/
 
 ---
 
-## NPM SCRIPTS
+## NPM SCRIPTS (11 script: 5 direct + 5 smart + 1 purge)
 
 ### Direct Start (npm start)
 ```bash
 npm start                         # Local SAPUI5 (ui5.yaml) - default
-npm run start:cdn                 # SAP CDN (ui5-cdn.yaml)
 npm run start:local               # Local SAPUI5 (ui5.yaml) - alias
+npm run start:cdn                 # SAP CDN (ui5-cdn.yaml)
 npm run start:backend             # Backend proxy (ui5-backend.yaml)
+npm run start:hybrid              # Hybrid (ui5-hybrid.yaml) - local UI5 + backend
 ```
 
 ### Smart Start (Recommended for dev)
 ```bash
-npm run smart-start               # Local SAPUI5 + port cleanup
-npm run smart-start:cdn           # CDN + port cleanup
-npm run smart-start:local         # Local + port cleanup (alias)
-npm run smart-start:backend       # Backend + port cleanup
+npm run smart-start               # Local SAPUI5 + port check
+npm run smart-start:local         # Local + port check (alias)
+npm run smart-start:cdn           # CDN + port check
+npm run smart-start:backend       # Backend + port check
+npm run smart-start:hybrid        # Hybrid + port check
+```
+
+### Purge (Process Killer)
+```bash
+npm run purge                     # Leoli a projekt sajat folyamatat a porton
+```
+
+**Ajanlott workflow:**
+```bash
+npm run purge && npm run smart-start:hybrid  # Purge + inditas
 ```
 
 ---
@@ -391,16 +415,20 @@ npm start
 ## VERSION HISTORY
 
 ### v4.0.0 (2026-02-15) - CURRENT
-**Theme**: fiori run Migration
+**Theme**: fiori run Migration + Hybrid Mode + Purge
 - Migracio http-server + build.js -> fiori run + fiori-tools-proxy
 - Statikus index.html (nincs tobb template/build)
-- YAML-alapu konfiguracio (ui5.yaml, ui5-cdn.yaml, ui5-backend.yaml)
+- YAML-alapu konfiguracio (ui5.yaml, ui5-cdn.yaml, ui5-backend.yaml, ui5-hybrid.yaml)
 - ui5-error-handler.js (ui5-bootstrap.js helyett)
 - Torolve: build.js, config.js, ui5-bootstrap.js, index.template.html
 - Torolve: http-server, cross-env fuggosegek
 - Uj fuggosegek: @sap/ux-ui5-tooling, @ui5/cli
 - SAPUI5 ONLY (OpenUI5 FORBIDDEN)
-- 3 mode: Local, CDN, Backend (hybrid megszunt)
+- 4 mode: Local, CDN, Backend, **Hybrid** (local UI5 + backend proxy)
+- **Hybrid mod**: ui5-hybrid.yaml — local SAPUI5 framework (~/.ui5/) + `/sap` proxy (192.168.1.10:9000)
+- **Purge**: kulon process killer (purge.js) — kikerult a start.js-bol
+- start.js csak port-ellenorzest vegez, NEM ol le folyamatokat
+- 11 npm script (5 direct + 5 smart + 1 purge)
 
 ### v3.2.0 (2026-02-15)
 **Theme**: App-Controlled Splash Architecture
@@ -490,11 +518,20 @@ npm start
 # Quick start
 npm start
 
-# Smart start (with port cleanup)
+# Smart start (with port check)
 npm run smart-start
 
 # CDN mode
 npm run smart-start:cdn
+
+# Hybrid mode (local UI5 + backend)
+npm run smart-start:hybrid
+
+# Process killer (port felszabaditas)
+npm run purge
+
+# Teljes workflow (purge + hybrid)
+npm run purge && npm run smart-start:hybrid
 ```
 
 ---
@@ -504,7 +541,7 @@ npm run smart-start:cdn
 ### Code
 - **Total Files**: ~30
 - **Core Files**: 8 (Component, splash-screen, ui5-error-handler, stb.)
-- **Config Files**: 3 YAML + package.json + manifest.json
+- **Config Files**: 4 YAML + package.json + manifest.json
 - **Documentation Files**: 19+ (hopper/)
 - **Test Files**: 1 (test-error-overlay.html)
 
@@ -547,8 +584,9 @@ npm run smart-start:cdn
 - [ ] CI/CD pipeline (not implemented)
 
 ### Operations
-- [x] Smart Start working
-- [x] All modes tested (Local, CDN, Backend)
+- [x] Smart Start working (port check + szerver inditas)
+- [x] Purge working (kulon process killer)
+- [x] All modes tested (Local, CDN, Backend, Hybrid)
 - [x] VSCode integration ready
 - [x] Troubleshooting guide available
 
@@ -604,6 +642,9 @@ A v4.0 a legnagyobb architekturalis valtozas a projekt tortenelmeben:
 4. **Konfiguracio**: Environment valtozok -> YAML fajlok
 5. **SAPUI5 kizarolag**: OpenUI5 hasznalata TILOS
 6. **Error handling**: `ui5-bootstrap.js` -> `ui5-error-handler.js`
+7. **Hybrid mod visszakerult**: ui5-hybrid.yaml (local UI5 + backend proxy)
+8. **Process kill kulon eszkoz**: purge.js — start.js NEM ol le folyamatokat
+9. **11 npm script**: 5 direct + 5 smart + 1 purge
 
 ### Lessons Learned
 1. **Architecture Pivot**: v3.1 (UI5 loading) -> v3.2 (Data loading) -> v4.0 (fiori run)

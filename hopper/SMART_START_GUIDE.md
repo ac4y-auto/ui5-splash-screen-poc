@@ -8,7 +8,7 @@
 
 ## Mi az a Smart Start?
 
-A Smart Start egy intelligens szerver indito script, amely automatikusan kezeli a port konfliktusokat anelkul, hogy manualisan kellene leallitanod a futo folyamatokat.
+A Smart Start egy intelligens szerver indito script, amely ellenorzi a port elerehetoseget es elindtija a `fiori run`-t. A v4.0-tol a **start.js csak ellenorzi a portot** — NEM oli le a futo folyamatokat. A folyamatok leolesere kulon eszkoz all rendelkezesre: a **purge.js** (`npm run purge`).
 
 ### Problema
 
@@ -28,7 +28,13 @@ npm start
 ### Megoldas Smart Starttal
 
 ```bash
-npm run smart-start  # Automatikusan kezeli a port konfliktust!
+npm run purge        # Leoli a futo projektet a porton (ha van)
+npm run smart-start  # Ellenorzi a portot es inditja a szervert
+```
+
+**Vagy egyetlen sorban:**
+```bash
+npm run purge && npm run smart-start  # Biztonsagos ujrainditas
 ```
 
 ---
@@ -49,6 +55,20 @@ Ez a `fiori run`-t inditja a default `ui5.yaml` konfiguracioval (local SAPUI5 a 
 npm run smart-start          # Local SAPUI5 (ui5.yaml) - default
 npm run smart-start:cdn      # SAPUI5 CDN (ui5-cdn.yaml)
 npm run smart-start:backend  # Backend szerver (ui5-backend.yaml)
+npm run smart-start:hybrid   # Hybrid mod (ui5-hybrid.yaml) - local UI5 + backend
+```
+
+### Hybrid Mod
+
+A hybrid mod a **local SAPUI5 framework** es a **backend proxy** kombinacioja:
+- **SAPUI5**: Local framework cache-bol (`~/.ui5/`, SAPUI5 1.105.0)
+- **Backend**: `/sap` utvonal proxy-zva a `http://192.168.1.10:9000` cimre
+- **`/resources` es `/test-resources`**: Lokalisan szolgalja a framework (NEM proxy-zott)
+
+```bash
+npm run smart-start:hybrid
+# vagy
+npm run purge && npm run smart-start:hybrid  # Ha a port foglalt
 ```
 
 ### Custom Port
@@ -83,15 +103,17 @@ start.js -> fiori run [--config yaml-file]
 Az uj rendszerben a `start.js`:
 1. **Nem futtat build scriptet** - nincs build.js, nincs index.template.html
 2. **Nem injektal environment valtozot** - az `index.html` statikus
-3. `fiori run`-t indit opcionalis `--config` parameterrel
-4. 3 mod: Local (ui5.yaml), CDN (ui5-cdn.yaml), Backend (ui5-backend.yaml)
+3. **Nem oli le a futo folyamatokat** - csak ellenorzi a portot (lasd `purge.js`)
+4. `fiori run`-t indit opcionalis `--config` parameterrel
+5. 4 mod: Local (ui5.yaml), CDN (ui5-cdn.yaml), Backend (ui5-backend.yaml), Hybrid (ui5-hybrid.yaml)
 
 | Jellemzo | v3.x (regi) | v4.0 (uj) |
 |----------|-------------|------------|
 | **Szerver** | http-server / ui5 serve | fiori run |
 | **Build** | build.js + index.template.html | Nincs (statikus index.html) |
-| **Konfiguracio** | Environment valtozo injektalas | YAML fajlok (ui5.yaml, ui5-cdn.yaml, ui5-backend.yaml) |
-| **Modok szama** | 4 (cdn, local, backend, hybrid) | 3 (local, cdn, backend) |
+| **Konfiguracio** | Environment valtozo injektalas | YAML fajlok (ui5.yaml, ui5-cdn.yaml, ui5-backend.yaml, ui5-hybrid.yaml) |
+| **Modok szama** | 4 (cdn, local, backend, hybrid) | 4 (local, cdn, backend, hybrid) |
+| **Process kill** | start.js vegzi | Kulon: purge.js (`npm run purge`) |
 | **Mod parameter** | `node start.js cdn` | `node start.js ui5-cdn.yaml` |
 | **Process azonositas** | http-server, ui5 serve | fiori, ui5 serve |
 
@@ -111,9 +133,19 @@ lsof -ti:8300 -sTCP:LISTEN
 netstat -ano | findstr :8300
 ```
 
-### 2. Process Azonositas
+### 2. Dontes (start.js)
 
-Ha a port foglalt, megnezi, hogy **ehhez a projekthez** tartozik-e a process:
+> **v4.0 valtozas:** A `start.js` **NEM oli le** a futo folyamatokat. Csak ellenorzi a portot.
+> Ha a port foglalt, hibauzenettel leall es a `npm run purge` futtatast javasolja.
+
+| Feltetel | Akcio |
+|----------|-------|
+| Port szabad | Szerver inditas |
+| Port foglalt | Hibauzenet + `npm run purge` javaslat + Exit |
+
+### 2b. Purge (purge.js) - Kulon Process Killer
+
+A **purge.js** (`npm run purge`) vegzi a process azonositast es leolest:
 
 ```javascript
 // Ellenorzi a command line-t
@@ -125,16 +157,13 @@ ps -p <PID> -o command=
 // - 'ui5 serve' (ui5 CLI szerver)
 ```
 
-> **v4.0 valtozas:** A `http-server` mar nem szerepel a keresett folyamatok kozott.
-> Helyette `fiori` es `ui5 serve` a ket azonositando process.
-
-### 3. Dontes
-
 | Feltetel | Akcio |
 |----------|-------|
-| Port szabad | Szerver inditas |
-| Port foglalt + sajat projekt | Process leol + Szerver inditas |
-| Port foglalt + mas projekt | Hibauzenet + Exit |
+| Port szabad | "Nothing to purge" + Exit 0 |
+| Port foglalt + sajat projekt | Process leol + port felszabadul |
+| Port foglalt + mas projekt | **Megtagadja** a leolest + Exit 1 |
+
+**Biztonsag:** A purge.js **CSAK** a projekt sajat folyamatait oli le (ui5-splash-screen-poc / fiori / ui5 markerek). Mas alkalmazasokat NEM bant.
 
 ### 4. Szerver Inditas
 
@@ -172,57 +201,88 @@ Starting fiori run...
 info proxy /resources http://localhost:8300 -> local UI5 installation
 ```
 
-### Eset 2: Port Foglalt (Sajat Projekt)
+### Eset 2: Port Foglalt (start.js)
 
 ```
 Smart Start
    Port: 8300
-   Project: ui5-splash-screen-poc
 
-Port 8300 is already in use (PID: 54321)
-Process belongs to this project (ui5-splash-screen-poc)
-Killing existing process (PID: 54321)...
-Process killed successfully
-
-Waiting for port to be released...
-Port 8300 is now free
-
-Starting fiori run...
+❌ Port 8300 is already in use (PID: 54321)
+   Run first:  npm run purge
+   Or use:     PORT=9000 npm run smart-start
 ```
 
-### Eset 3: Port Foglalt (Mas Projekt)
+> A start.js **NEM** probalja leolni a folyamatot — egyszeruen megallit es javaslatot ad.
+
+### Eset 3: Purge — Sajat Projekt
 
 ```
-Smart Start
+🧹 Purge
    Port: 8300
    Project: ui5-splash-screen-poc
 
-Port 8300 is already in use (PID: 99999)
-Port 8300 is used by another application (PID: 99999)
-   This process does NOT belong to ui5-splash-screen-poc
-   Please stop it manually or use a different port:
+⚠️  Port 8300 is in use (PID: 54321)
+✓  Process belongs to ui5-splash-screen-poc
+🔄 Killing PID 54321...
+✅ Purged — port 8300 is free
+```
+
+### Eset 4: Purge — Mas Projekt (MEGTAGADVA)
+
+```
+🧹 Purge
+   Port: 8300
+   Project: ui5-splash-screen-poc
+
+⚠️  Port 8300 is in use (PID: 99999)
+❌ Process does NOT belong to ui5-splash-screen-poc
+   Refusing to kill. Stop it manually or use a different port:
    PORT=9000 npm run smart-start
+```
+
+### Eset 5: Purge + Smart Start (Teljes Workflow)
+
+```bash
+npm run purge && npm run smart-start:hybrid
+```
+
+```
+🧹 Purge
+   Port: 8300
+   Project: ui5-splash-screen-poc
+
+✓  Port 8300 is free — nothing to purge
+
+🚀 Smart Start
+   Port: 8300
+   Config: ui5-hybrid.yaml
+
+✓  Port 8300 is available
+🚀 Starting fiori run...
 ```
 
 ---
 
 ## Biztonsagi Funkciok
 
-### 1. Projekt Vedelem
+### 1. Projekt Vedelem (purge.js)
 
-A script **NEM oli le** mas projektek folyamatait:
+A **purge.js** (NEM a start.js) vegzi a folyamat leoleseket, es **NEM oli le** mas projektek folyamatait:
 
 ```javascript
-// Ellenorzi:
+// purge.js - Ellenorzi:
 if (cmdLine.includes('ui5-splash-screen-poc') ||
     cmdLine.includes('fiori') ||
     cmdLine.includes('ui5 serve')) {
     // Biztonsagos leolni
 } else {
-    // STOP! Mas projekt folyamata
+    // STOP! Mas projekt folyamata — MEGTAGADVA
     process.exit(1);
 }
 ```
+
+> **v4.0 valtozas:** A start.js-bol kikerult a process kill logika.
+> A start.js csak port-ellenorzest vegez, a purge.js a dedikalt kill eszkoz.
 
 ### 2. PORT Validacio
 
@@ -268,20 +328,30 @@ while (Date.now() - start < 3000) {
 
 ## Troubleshooting
 
-### Problema: "Failed to kill process"
+### Problema: "Port is already in use" (start.js)
+
+**Ok:** A port foglalt es a start.js nem tud indulni
+
+**Megoldas:**
+```bash
+# Eloszor purge, aztan start
+npm run purge && npm run smart-start
+```
+
+### Problema: "Failed to kill process" (purge.js)
 
 **Ok:** Nincs jogosultsag a process leolesehez
 
 **Megoldas:**
 ```bash
 # macOS/Linux
-sudo npm run smart-start
+sudo npm run purge
 
 # Windows (Admin CMD)
-npm run smart-start
+npm run purge
 ```
 
-### Problema: Port meg mindig foglalt
+### Problema: Port meg mindig foglalt (purge utan)
 
 **Ok:** A process nem szabadult fel 3 masodpercen belul
 
@@ -295,13 +365,13 @@ taskkill /PID <PID> /F         # Windows
 PORT=9000 npm run smart-start
 ```
 
-### Problema: "Port is used by another application"
+### Problema: "Process does NOT belong to..." (purge.js)
 
-**Ok:** A port-on futo process **NEM** ehhez a projekthez tartozik
+**Ok:** A port-on futo process **NEM** ehhez a projekthez tartozik — a purge.js megtagadja a leolest
 
 **Megoldas:**
 
-**Opcio 1** - Leallitod a masik folyamatot:
+**Opcio 1** - Leallitod a masik folyamatot manualisan:
 ```bash
 lsof -ti:8300  # Megkapod a PID-t
 kill -9 <PID>  # Leolod
@@ -325,12 +395,12 @@ netstat -ano | findstr :8300
 
 ## Osszehasonlitas
 
-| | Hagyomanyos Start | Smart Start |
+| | Hagyomanyos Start | Purge + Smart Start |
 |---|---|---|
-| **Port foglalt** | Hibauzenet, manualis leallitas | Automatikus kezeles |
+| **Port foglalt** | Hibauzenet, manualis leallitas | `npm run purge && npm run smart-start` |
 | **Ismetelt futtatas** | Ujra hibat dob | Mindig indul |
-| **Mas projekt vedelme** | Nincs vedelem | Biztonsagos |
-| **Egyszeruseg** | 3 lepes (find PID, kill, restart) | 1 parancs |
+| **Mas projekt vedelme** | Nincs vedelem | Biztonsagos (purge.js ellenorzi) |
+| **Egyszeruseg** | 3 lepes (find PID, kill, restart) | 1-2 parancs |
 | **Hibakezelés** | Nincs | Van (exit code, error msg) |
 
 ---
@@ -341,13 +411,16 @@ netstat -ano | findstr :8300
 {
   "scripts": {
     "start": "npx fiori run --port 8300 --open index.html",
-    "start:cdn": "npx fiori run --port 8300 --config ui5-cdn.yaml --open index.html",
     "start:local": "npx fiori run --port 8300 --open index.html",
+    "start:cdn": "npx fiori run --port 8300 --config ui5-cdn.yaml --open index.html",
     "start:backend": "npx fiori run --port 8300 --config ui5-backend.yaml --open index.html",
+    "start:hybrid": "npx fiori run --port 8300 --config ui5-hybrid.yaml --open index.html",
     "smart-start": "node start.js",
-    "smart-start:cdn": "node start.js ui5-cdn.yaml",
     "smart-start:local": "node start.js",
-    "smart-start:backend": "node start.js ui5-backend.yaml"
+    "smart-start:cdn": "node start.js ui5-cdn.yaml",
+    "smart-start:backend": "node start.js ui5-backend.yaml",
+    "smart-start:hybrid": "node start.js ui5-hybrid.yaml",
+    "purge": "node purge.js"
   }
 }
 ```
@@ -355,16 +428,25 @@ netstat -ano | findstr :8300
 **Magyarazat:**
 - `npm start` -> Direkt fiori run (default ui5.yaml, local SAPUI5)
 - `npm run start:cdn` -> Direkt fiori run CDN konfiggal
-- `npm run smart-start` -> Smart Start (port cleanup + fiori run)
+- `npm run start:hybrid` -> Direkt fiori run Hybrid konfiggal (local UI5 + backend)
+- `npm run smart-start` -> Smart Start (port ellenorzes + fiori run)
 - `npm run smart-start:cdn` -> Smart Start CDN konfiggal
+- `npm run smart-start:hybrid` -> Smart Start Hybrid konfiggal
+- `npm run purge` -> Kulon process killer (leoli a sajat projektet a porton)
+
+**Ajanlott workflow (port foglaltsag eseten):**
+```bash
+npm run purge && npm run smart-start:hybrid
+```
 
 **Modok es YAML fajlok:**
 
-| Mod | YAML | Honnan jon a SAPUI5? |
-|-----|------|---------------------|
-| Local (default) | `ui5.yaml` | node_modules (framework section) |
-| CDN | `ui5-cdn.yaml` | fiori-tools-proxy -> sapui5.hana.ondemand.com |
-| Backend | `ui5-backend.yaml` | fiori-tools-proxy -> CDN + backend proxy |
+| Mod | YAML | Honnan jon a SAPUI5? | Backend |
+|-----|------|---------------------|---------|
+| Local (default) | `ui5.yaml` | Local framework cache (~/.ui5/) | Nincs |
+| CDN | `ui5-cdn.yaml` | fiori-tools-proxy -> sapui5.hana.ondemand.com | Nincs |
+| Backend | `ui5-backend.yaml` | fiori-tools-proxy -> CDN | /sap -> 192.168.1.10:9000 |
+| **Hybrid** | `ui5-hybrid.yaml` | **Local framework cache (~/.ui5/)** | **/sap -> 192.168.1.10:9000** |
 
 ---
 
@@ -373,23 +455,39 @@ netstat -ano | findstr :8300
 ### start.js Architektura (v4.0)
 
 ```javascript
+// start.js - Csak port check + szerver inditas
 main() {
     1. getPortPID(8300) -> PID vagy null
     2. if (PID exists) {
-        3. isProjectProcess(PID) -> true/false
-        4. if (true) {
-            5. killProcess(PID)
-            6. wait 3s for port release
-        } else {
-            7. error + exit
-        }
+        3. error("Port in use, run: npm run purge") + exit(1)
     }
-    8. spawn('npx', ['fiori', 'run', '--port', '8300', '--open', 'index.html', ...])
+    4. spawn('npx', ['fiori', 'run', '--port', '8300', '--open', 'index.html', ...])
        // Optional: '--config', configFile
 }
 ```
 
-> **v4.0 valtozas:** Nincs tobb `execSync('node build.js cdn')` lepes.
+### purge.js Architektura (v4.0)
+
+```javascript
+// purge.js - Kulon process killer
+main() {
+    1. getPortPID(8300) -> PID vagy null
+    2. if (!PID) {
+        3. "Nothing to purge" + exit(0)
+    }
+    4. isProjectProcess(PID) -> true/false
+    5. if (!isProjectProcess) {
+        6. "Refusing to kill" + exit(1)
+    }
+    7. killProcess(PID)
+    8. wait max 3s for port release
+    9. verify port is free
+}
+```
+
+> **v4.0 valtozas:** A process kill logika kulon fajlba (purge.js) kerult.
+> A start.js mar NEM tartalmaz kill funkciót — csak port ellenorzest vegez.
+> Nincs tobb `execSync('node build.js cdn')` lepes.
 > A build lepes megszunt, a start.js kozvetlenul a `fiori run`-t inditja.
 
 ### Cross-Platform Kompatibilitas
@@ -404,14 +502,19 @@ main() {
 
 ## Best Practices
 
-### 1. Hasznald a smart-start-ot fejleszteskor
+### 1. Hasznald a purge + smart-start-ot fejleszteskor
 
 ```bash
-# HELYES - port cleanup + szerver
-npm run smart-start
-npm run smart-start:cdn
+# HELYES - purge + port check + szerver
+npm run purge && npm run smart-start
+npm run purge && npm run smart-start:cdn
+npm run purge && npm run smart-start:hybrid
 
-# KERULED - nincs port cleanup
+# HELYES - ha tudod, hogy a port szabad
+npm run smart-start
+npm run smart-start:hybrid
+
+# KERULED - nincs port check
 npm start
 npm run start:cdn
 ```

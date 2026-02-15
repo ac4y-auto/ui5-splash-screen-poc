@@ -34,7 +34,7 @@ Ez a mappa tartalmazza a **UI5 Splash Screen POC** projekt mukodesi, fejlesztesi
 | [FEJLESZTOI_UTASITAS.md](FEJLESZTOI_UTASITAS.md) | Fejlesztoi utmutato (setup, workflow, best practices) | pre-v4.0 | Uj fejlesztok |
 | [ERROR_HANDLING.md](ERROR_HANDLING.md) | Error handling (UI5 load failure, error overlay, ui5-error-handler.js) | **v4.0** | Fejlesztok |
 | [LOCAL_MODE_SETUP.md](LOCAL_MODE_SETUP.md) | Local mod beallitas (node_modules, UI5 CLI) | pre-v4.0 (tortenelmi) | Fejlesztok |
-| [HYBRID_MODE_GUIDE.md](HYBRID_MODE_GUIDE.md) | Hybrid mod utmutato (proxy, backend) | pre-v4.0 (tortenelmi) | Backend integrator |
+| [HYBRID_MODE_GUIDE.md](HYBRID_MODE_GUIDE.md) | Hybrid mod utmutato (lokalis UI5 + backend proxy) | **v4.0** | Backend integrator |
 
 ### **Integracio & Planning**
 
@@ -81,7 +81,7 @@ A v4.0 a projekt legnagyobb architekturalis valtozasa. A kovetkezo dokumentumok 
 - **CHEAT_SHEET.md** - a parancsok egy resze mar nem ervenyes (build.js, http-server)
 - **FEJLESZTOI_UTASITAS.md** - a setup lepes a regi architekturara vonatkozik
 - **LOCAL_MODE_SETUP.md** - a local mod beallitasa megvaltozott (most ui5.yaml + fiori run)
-- **HYBRID_MODE_GUIDE.md** - a hybrid mod megszunt v4.0-ban (CDN + Backend kulon modok)
+- **HYBRID_MODE_GUIDE.md** - frissitve v4.0-ra (lokalis UI5 framework + backend proxy)
 - **KONZEPCIÓ.md** - a koncepcio resze mar nem aktualis (environment valtozok, build.js)
 - **WIRING.md** - a modul kapcsolatok egy resze megvaltozott (ui5-bootstrap.js -> ui5-error-handler.js)
 
@@ -89,6 +89,7 @@ A v4.0 a projekt legnagyobb architekturalis valtozasa. A kovetkezo dokumentumok 
 - **ERROR_HANDLING.md** - ui5-error-handler.js, script error + 15s timeout
 - **SMART_START_GUIDE.md** - fiori run, --config parameter, yaml fajlok
 - **PROJECT_STATUS.md** - technologiai stack, projekt struktura, NPM scriptek
+- **HYBRID_MODE_GUIDE.md** - lokalis UI5 framework + backend proxy (ui5-hybrid.yaml)
 - **README.md** - ez a fajl (dokumentum index)
 
 ---
@@ -140,7 +141,7 @@ hopper/
 |   |-- ERROR_HANDLING.md        # Error handling (v4.0)
 |   |-- FEJLESZTOI_UTASITAS.md   # Dev guide (pre-v4.0)
 |   |-- LOCAL_MODE_SETUP.md      # Local setup (pre-v4.0)
-|   +-- HYBRID_MODE_GUIDE.md     # Hybrid setup (pre-v4.0)
+|   +-- HYBRID_MODE_GUIDE.md     # Hybrid setup (v4.0)
 |
 |-- Security
 |   +-- SECURITY.md              # Security audit
@@ -198,6 +199,8 @@ Ctrl+Shift+F -> Files to include: hopper/**/*.md
 "error-handler"   -> ERROR_HANDLING.md
 "Smart Start"     -> SMART_START_GUIDE.md
 "ui5.yaml"        -> SMART_START_GUIDE.md, PROJECT_STATUS.md
+"hybrid"          -> HYBRID_MODE_GUIDE.md, SMART_START_GUIDE.md
+"purge"           -> SMART_START_GUIDE.md
 ```
 
 ---
@@ -213,6 +216,7 @@ Ctrl+Shift+F -> Files to include: hopper/**/*.md
 | Kritikus szabaly | RUNBOOK.md |
 | Architektura valtozas | APP_CONTROLLED_SPLASH.md, WIRING.md |
 | NPM script valtozas | SMART_START_GUIDE.md, PROJECT_STATUS.md |
+| Port/process valtozas | SMART_START_GUIDE.md (start.js, purge.js) |
 | Uj terminologia | LINGO.md |
 | Error handling valtozas | ERROR_HANDLING.md |
 
