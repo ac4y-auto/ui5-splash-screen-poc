@@ -42,7 +42,27 @@
     // Handle script load error
     script.onerror = function() {
         console.error('[UI5 Bootstrap] Failed to load UI5 from:', config.url);
-        alert('Failed to load UI5 from ' + config.name + '. Please check the configuration.');
+
+        // Signal error to splash screen
+        window.UI5_LOAD_ERROR = true;
+
+        // Hide splash screen immediately
+        if (window.SplashScreen && window.SplashScreen.hide) {
+            window.SplashScreen.hide(0); // Immediate hide (no delay)
+        }
+
+        // Show error overlay
+        showErrorOverlay({
+            title: 'UI5 Betöltési Hiba',
+            message: 'Az UI5 library nem töltődött be a következő forrásból:',
+            source: config.url,
+            environment: config.name,
+            technicalDetails: {
+                environment: env,
+                url: config.url,
+                error: 'Failed to load resource (network error or 404)'
+            }
+        });
     };
 
     // Handle script load success
@@ -54,5 +74,63 @@
     document.head.appendChild(script);
 
     console.log('[UI5 Bootstrap] Bootstrap script injected into DOM');
+
+    /**
+     * Show error overlay when UI5 fails to load
+     */
+    function showErrorOverlay(errorInfo) {
+        // Create overlay container
+        var overlay = document.createElement('div');
+        overlay.id = 'ui5-load-error-overlay';
+        overlay.className = 'error-overlay';
+
+        // Build error content HTML
+        overlay.innerHTML = `
+            <div class="error-content">
+                <div class="error-icon">⚠️</div>
+                <h2>${errorInfo.title}</h2>
+                <p>${errorInfo.message}</p>
+                <div class="error-source">
+                    <strong>Forrás:</strong> ${errorInfo.environment}
+                    <br>
+                    <code>${errorInfo.source}</code>
+                </div>
+
+                <div class="error-actions">
+                    <button class="btn-primary" onclick="location.reload()">
+                        🔄 Oldal újratöltése
+                    </button>
+                    <button class="btn-secondary" onclick="console.table(window.UI5_CONFIGS)">
+                        📋 Konfiguráció megtekintése
+                    </button>
+                </div>
+
+                <details class="error-details">
+                    <summary>Technikai részletek (kattints a megjelenítéshez)</summary>
+                    <pre>${JSON.stringify(errorInfo.technicalDetails, null, 2)}</pre>
+                </details>
+
+                <div class="error-suggestions">
+                    <h3>Lehetséges megoldások:</h3>
+                    <ul>
+                        <li>Ellenőrizd az internet kapcsolatot</li>
+                        <li>Próbáld meg másik környezetet (pl. Local Mode)</li>
+                        <li>Ellenőrizd a backend szerver elérhetőségét (Backend/Hybrid mód esetén)</li>
+                        <li>Nézd meg a konzolt további hibákért (F12)</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
+        // Inject into body
+        document.body.appendChild(overlay);
+
+        // Fade in animation
+        setTimeout(function() {
+            overlay.classList.add('show');
+        }, 10);
+
+        console.log('[UI5 Bootstrap] Error overlay displayed');
+    }
 
 })();

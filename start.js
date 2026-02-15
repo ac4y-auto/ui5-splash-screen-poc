@@ -14,7 +14,17 @@ const { execSync, spawn } = require('child_process');
 const path = require('path');
 
 // Configuration
-const DEFAULT_PORT = process.env.PORT || 8300;
+const rawPort = process.env.PORT || '8300';
+const DEFAULT_PORT = parseInt(rawPort, 10);
+
+// Validate port to prevent command injection
+if (isNaN(DEFAULT_PORT) || DEFAULT_PORT < 1 || DEFAULT_PORT > 65535) {
+    console.error(`❌ Invalid PORT: ${rawPort}`);
+    console.error('   PORT must be a number between 1 and 65535');
+    console.error('   Examples: PORT=8300, PORT=9000');
+    process.exit(1);
+}
+
 const PROJECT_MARKER = 'ui5-splash-screen-poc';
 const env = process.argv[2] || 'cdn'; // cdn, local, backend, hybrid
 
@@ -39,8 +49,8 @@ function getPortPID(port) {
         if (process.platform === 'win32') {
             cmd = `netstat -ano | findstr :${port}`;
         } else {
-            // macOS/Linux
-            cmd = `lsof -ti:${port}`;
+            // macOS/Linux - only get the LISTEN process (not connected clients)
+            cmd = `lsof -ti:${port} -sTCP:LISTEN`;
         }
 
         const output = execSync(cmd, { encoding: 'utf8' });

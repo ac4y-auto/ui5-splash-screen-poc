@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UI5 Splash Screen POC</title>
+    <title>UI5 Error Overlay Test</title>
 
-    <!-- Environment configuration (injected at build/server start) -->
-    <script>window.UI5_ENVIRONMENT = 'backend';</script>
+    <!-- Environment configuration (simulated error) -->
+    <script>window.UI5_ENVIRONMENT = 'cdn';</script>
     <script src="config.js"></script>
 
     <!-- Splash screen styles -->
     <link rel="stylesheet" href="splash-screen.css">
 
-    <!-- UI5 Bootstrap (dynamic injection based on environment) -->
+    <!-- Test: Force UI5 load error by using invalid URL -->
+    <script>
+        // Override config to force error
+        UI5_CONFIGS.cdn.url = 'https://invalid-url-that-will-fail.example.com/sap-ui-core.js';
+    </script>
+
+    <!-- UI5 Bootstrap (will fail) -->
     <script src="ui5-bootstrap.js"></script>
 
     <!-- Splash screen logic -->
@@ -32,10 +38,14 @@
     <!-- UI5 Application Container -->
     <div
         data-sap-ui-component
-        data-name="myapp"
+        data-name="ui5.splash.poc"
         data-id="container"
         data-settings='{"id" : "ui5SplashPoc"}'
         data-handle-validation="true">
     </div>
+
+    <h1 style="text-align: center; color: white; margin-top: 100px;">
+        Ez csak akkor látszik ha nincs error overlay
+    </h1>
 </body>
 </html>

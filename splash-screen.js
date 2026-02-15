@@ -64,52 +64,88 @@
     }
 
     /**
-     * Attach to UI5 Core init event
-     * This ensures splash screen hides when UI5 is fully loaded
+     * MANUAL CONTROL MODE
+     *
+     * Splash screen NEM indul automatikusan!
+     * Az UI5 alkalmazás irányítja a show/hide-ot:
+     *
+     * - window.SplashScreen.show() → Splash látható (app init-kor)
+     * - window.SplashScreen.hide() → Splash eltűnik (adatok betöltve)
+     *
+     * Példa használat Component.js-ben:
+     *
+     *   init: function() {
+     *       UIComponent.prototype.init.apply(this, arguments);
+     *
+     *       // Splash START
+     *       if (window.SplashScreen) {
+     *           window.SplashScreen.show();
+     *       }
+     *
+     *       // Business data loading
+     *       this.loadMasterData().then(function() {
+     *           // Splash END
+     *           if (window.SplashScreen) {
+     *               window.SplashScreen.hide();
+     *           }
+     *       });
+     *   }
      */
-    if (typeof sap !== 'undefined') {
-        // UI5 is already loaded (unlikely)
-        console.log('[Splash] UI5 already loaded, hiding splash...');
-        hideSplashScreen();
-    } else {
-        // Wait for UI5 to load
-        console.log('[Splash] Waiting for UI5 Core to initialize...');
-
-        // Polling mechanism to detect UI5 load
-        var checkUI5Interval = setInterval(function() {
-            if (typeof sap !== 'undefined' && sap.ui && sap.ui.getCore) {
-                clearInterval(checkUI5Interval);
-                console.log('[Splash] UI5 Core detected, attaching init handler...');
-
-                sap.ui.getCore().attachInit(function() {
-                    console.log('[Splash] UI5 Core initialized successfully');
-                    hideSplashScreen();
-                });
-            }
-        }, 100); // Check every 100ms
-
-        // Fallback timeout (hide after 10 seconds max)
-        setTimeout(function() {
-            clearInterval(checkUI5Interval);
-            if (document.getElementById('splash-screen')) {
-                console.warn('[Splash] UI5 init timeout, forcing splash screen hide');
-                hideSplashScreen(0);
-            }
-        }, 10000);
-    }
+    console.log('[Splash] Manual control mode - waiting for app to call show()');
 
     /**
-     * Expose hide function globally (optional)
-     * Allows manual control: SplashScreen.hide()
+     * Public API for UI5 App Control
+     *
+     * Az UI5 alkalmazás ezekkel a metódusokkal irányítja a splash screen-t
      */
     window.SplashScreen = {
-        hide: hideSplashScreen,
+        /**
+         * Show splash screen
+         * Hívd meg az app init-kor, mielőtt az adatok betöltődnek
+         */
         show: function() {
             var splash = document.getElementById('splash-screen');
             if (splash) {
+                // Remove fade-out class if present
                 splash.classList.remove('fade-out');
-                console.log('[Splash] Splash screen shown');
+                splash.classList.remove('hidden');
+
+                // Make visible
+                splash.style.display = 'flex';
+                splash.style.opacity = '1';
+
+                // Start video playback
+                var video = splash.querySelector('video');
+                if (video) {
+                    video.play();
+                }
+
+                console.log('[Splash] ✅ Splash screen SHOWN (app initiated)');
+            } else {
+                console.warn('[Splash] ⚠️  Splash screen element not found in DOM');
             }
+        },
+
+        /**
+         * Hide splash screen
+         * Hívd meg amikor az app készen áll (adatok betöltve)
+         * @param {number} delay - Optional delay in ms (default 500ms)
+         */
+        hide: function(delay) {
+            console.log('[Splash] Hide requested by app');
+            hideSplashScreen(delay);
+        },
+
+        /**
+         * Check if splash is currently visible
+         * @returns {boolean}
+         */
+        isVisible: function() {
+            var splash = document.getElementById('splash-screen');
+            if (!splash) return false;
+
+            var style = window.getComputedStyle(splash);
+            return style.display !== 'none' && style.opacity !== '0';
         }
     };
 

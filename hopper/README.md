@@ -10,6 +10,7 @@ Ez a mappa tartalmazza a **UI5 Splash Screen POC** projekt működési, fejleszt
 
 | Fájl | Leírás | Célcsoport |
 |------|--------|------------|
+| [JUST-RUN-IT.md](JUST-RUN-IT.md) | 🆕 Gyors indítás (5 perc alatt futó projekt!) | Minden user |
 | [RUNBOOK.md](RUNBOOK.md) | Operációs útmutató (szabályok, szerverek, debug) | Ops, DevOps |
 | [CHEAT_SHEET.md](CHEAT_SHEET.md) | Gyors referencia (parancsok, URL-ek, tippek) | Minden fejlesztő |
 | [SMART_START_GUIDE.md](SMART_START_GUIDE.md) | Smart Start használat (port management) | Fejlesztők |
@@ -19,6 +20,8 @@ Ez a mappa tartalmazza a **UI5 Splash Screen POC** projekt működési, fejleszt
 | Fájl | Leírás | Célcsoport |
 |------|--------|------------|
 | [KONZEPCIÓ.md](KONZEPCIÓ.md) | Részletes architektúra és design döntések | Architekt, Lead Dev |
+| [WIRING.md](WIRING.md) | 🆕 Működési folyamat (komponens kapcsolatok, flow-k) | Minden fejlesztő |
+| [SECURITY.md](SECURITY.md) | 🆕 Biztonsági elemzés és javítások | Security, DevOps |
 | [ARCHITECTURE_v2.txt](ARCHITECTURE_v2.txt) | v2.0 visual ASCII architektúra diagram | Minden fejlesztő |
 | [REFACTORING_NOTES.md](REFACTORING_NOTES.md) | v2.0 refactoring jegyzet (monolith → modular) | Code Reviewer |
 
@@ -27,6 +30,8 @@ Ez a mappa tartalmazza a **UI5 Splash Screen POC** projekt működési, fejleszt
 | Fájl | Leírás | Célcsoport |
 |------|--------|------------|
 | [FEJLESZTOI_UTASITAS.md](FEJLESZTOI_UTASITAS.md) | Fejlesztői útmutató (setup, workflow, best practices) | Új fejlesztők |
+| [APP_CONTROLLED_SPLASH.md](APP_CONTROLLED_SPLASH.md) | 🆕 App-irányított splash (show/hide API, best practices) | Minden fejlesztő |
+| [ERROR_HANDLING.md](ERROR_HANDLING.md) | 🆕 Error handling (UI5 load failure, error overlay) | Fejlesztők |
 | [LOCAL_MODE_SETUP.md](LOCAL_MODE_SETUP.md) | Local mód beállítás (node_modules, UI5 CLI) | Fejlesztők |
 | [HYBRID_MODE_GUIDE.md](HYBRID_MODE_GUIDE.md) | Hybrid mód útmutató (proxy, backend) | Backend integrátor |
 
