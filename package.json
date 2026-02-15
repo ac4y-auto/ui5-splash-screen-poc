@@ -4,24 +4,21 @@
   "description": "UI5 Splash Screen POC with multiple environment configurations",
   "scripts": {
     "start": "npm run start:cdn",
-    "start:cdn": "cross-env UI5_ENV=cdn npm run serve",
-    "start:local": "cross-env UI5_ENV=local npm run serve",
-    "start:backend": "cross-env UI5_ENV=backend npm run serve",
-    "serve": "http-server -p 8300 --cors -o /index.html",
+    "start:cdn": "http-server -p 8300 --cors -o /index-configurable.html?env=cdn",
+    "start:local": "npx ui5 serve --port 8300 --open index-configurable.html?env=local",
+    "start:backend": "http-server -p 8300 --cors -o /index-configurable.html?env=backend",
+    "start:hybrid": "npx ui5 serve --port 8300 --config ui5-backend.yaml --open index-configurable.html?env=hybrid",
     "build": "node build.js"
   },
   "keywords": [
     "ui5",
     "splash-screen",
-    "openui5",
+    "sapui5",
     "sap"
   ],
   "author": "ac4y",
   "license": "MIT",
   "devDependencies": {
-    "@openui5/sap.m": "^1.105.0",
-    "@openui5/sap.ui.core": "^1.105.0",
-    "@openui5/themelib_sap_horizon": "^1.105.0",
     "@ui5/cli": "^4.0.43",
     "cross-env": "^7.0.3",
     "http-server": "^14.1.1",

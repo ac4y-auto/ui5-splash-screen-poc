@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="theme-color" content="#0854a0">
+	<link rel="manifest" href="./utils/manifest.json">
+
+    <title>UI5</title>
+
+    <!-- ============================================ -->
+    <!-- SPLASH SCREEN: 1/3 - CSS betöltése           -->
+    <!-- ============================================ -->
+    <link rel="stylesheet" href="css/splash-screen.css">
+
+    <script>
+        if (!window.location.pathname.endsWith('index.html') && !window.location.pathname.endsWith('/'))
+            window.location.href = window.location.href + '/';
+
+        var fr = 638198233886783700;
+
+        window["forceReset"] = Math.max(fr, '{{forceReset}}');
+
+        if (location.search && location.search.includes("forceReset")) {
+            history.pushState({}, null, window.location.href.replace(window.location.search, ""));
+        }
+
+        window.onbeforeunload = function() { return "Your work will be lost."; };
+    </script>
+    <script>
+
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('sw.js')
+			  .then(function(registration) {
+				console.log('[success] scope: ', registration.scope);
+			  }, function(err) {
+				// registration failed :(
+				console.log('[fail]: ', err);
+			  });
+		}
+
+	</script>
+    <script src="./utils/print.min.js"></script>
+    <script id="sap-ui-bootstrap"
+        src="resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_fiori_3"
+        data-sap-ui-xx-bindingSyntax="complex"
+        data-sap-ui-resourceroots='{
+            "ntt.wms": "./"
+        }'
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-logLevel = "debug"
+        data-sap-ui-frameOptions="trusted"></script>
+    <script id="locate-reuse-libs"
+        src="./utils/locate-reuse-libs.js"
+        data-sap-ui-manifest-uri="./manifest.json"
+        data-sap-ui-componentName="ntt.wms"></script>
+</head>
+
+<!-- ====================================================== -->
+<!-- SPLASH SCREEN: 2/3 - "loading" class hozzáadva a body-hoz -->
+<!-- ====================================================== -->
+<body class="sapUiBody sapUiSizeCompact loading" id="content">
+
+    <!-- ============================================ -->
+    <!-- SPLASH SCREEN: 2/3 - HTML struktúra           -->
+    <!-- ============================================ -->
+    <div id="splash-screen">
+        <video id="splash-video" autoplay loop muted playsinline
+               poster="images/splash-poster.jpeg">
+            <source src="images/splash-video.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div data-sap-ui-component
+        data-name="ntt.wms"
+        data-id="container"
+        data-settings='{"id" : "ntt.wms"}'
+        data-handle-validation="true"></div>
+
+    <!-- ============================================ -->
+    <!-- SPLASH SCREEN: 3/3 - JavaScript vezérlő      -->
+    <!-- ============================================ -->
+    <script src="css/splash-screen.js"></script>
+</body>
+
+</html>
