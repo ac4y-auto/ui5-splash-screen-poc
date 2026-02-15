@@ -53,7 +53,8 @@
       "Bash(start http://localhost:8300/)",
       "Bash(start chrome --incognito \"http://localhost:8300/\")",
       "Bash(cmd //c \"start chrome --incognito http://localhost:8300/\")",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(git tag:*)"
     ]
   }
 }
