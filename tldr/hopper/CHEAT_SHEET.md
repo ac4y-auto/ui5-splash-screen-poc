@@ -29,9 +29,11 @@
 ## Fontos fájlok
 - `index.html` — statikus, SAPUI5 bootstrap + splash
 - `splash-screen.js` — SplashScreen API (show/hide/isVisible)
-- `ui5-error-handler.js` — error overlay (15s timeout + script error)
+- `splash-screen.css` — splash stílusok (display: flex, opacity: 1)
+- `ui5-error-handler.js` — error overlay (180s timeout + script error)
 - `Component.js` — app logika, splash vezérlés
 - `start.js` — Smart Start (port check), `purge.js` — process killer
+- `WMS-INTEGRATION-INSTANT/` — integrációs csomag (install.sh + 9 fájl)
 
 ## Gyors debug
 ```bash
