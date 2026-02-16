@@ -74,7 +74,10 @@
       "Bash(git -C /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc/.claude/worktrees/vigorous-bell diff)",
       "Bash(git -C /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc/.claude/worktrees/vigorous-bell diff main...HEAD --stat)",
       "Bash(git -C /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc/.claude/worktrees/vigorous-bell add .claude/settings.local.json)",
-      "Bash(git -C /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc/.claude/worktrees/vigorous-bell commit -m \"$\\(cat <<''EOF''\nchore: update local claude permissions for worktree commands\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git -C /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc/.claude/worktrees/vigorous-bell commit -m \"$\\(cat <<''EOF''\nchore: update local claude permissions for worktree commands\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(bash:*)",
+      "Bash(xargs:*)",
+      "Bash(npm run start:backend:*)"
     ]
   }
 }
