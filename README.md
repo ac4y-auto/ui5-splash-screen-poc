@@ -4,13 +4,17 @@ UI5 alkalmazas splash screen-nel, amely webm videot jatsz le a betoltes alatt.
 
 ## Funkciok
 
-- **Splash Screen** videoval (5x lassitott lejatszas, automatikus eltuness)
+- **Splash Screen** videoval (5x lassitott lejatszas, manualis vezerles)
+- **Manualis vezerles** - Az app donti el mikor hiv show()/hide()-ot (Component.js/ts)
+- **60 mp biztonsagi fallback** - Ha az app nem hivja hide()-ot, automatikus elrejtes + error overlay
 - **4 Uzemeltetesi Mod**: Local, CDN, Backend, Hybrid (YAML konfiguraciokkal)
 - **Fiori Run** szerver (`@sap/ux-ui5-tooling` + `fiori-tools-proxy`)
 - **Statikus index.html** - nincs build lepes, nincs template
 - **Smart Start** - automatikus port-ellenorzes
 - **Purge** - onallo process kilo (csak projekt folyamatokat ol le)
-- **Error Overlay** - hibajelzes ha a SAPUI5 nem toltodik be
+- **Ketretegu hibakezel\u00e9s**:
+  - `ui5-error-handler.js` - Error overlay ha a SAPUI5 framework nem toltodik be (180 mp timeout)
+  - `splash-screen.js` fallback - Error overlay ha a backend nem elerheto (60 mp timeout)
 - **Poster kep** tamogatas (100% kepernyo)
 - **Smooth fade-out** atmenet
 - **Responsive** design
@@ -142,9 +146,9 @@ Minden mukodesi es fejlesztesi dokumentum a [`hopper/`](hopper/) mappaban talalh
 - `legacy/index-demo.html` - Demo verzio CSS animacioval
 
 ### Splash Screen Modulok
-- `splash-screen.css` - Splash screen stilusok
-- `splash-screen.js` - Splash screen logika
-- `ui5-error-handler.js` - SAPUI5 betoltesi hiba kezelo (timeout + script error overlay)
+- `splash-screen.css` - Splash screen + error overlay stilusok
+- `splash-screen.js` - Splash screen logika (manualis vezerles + 60s fallback timeout + error overlay)
+- `ui5-error-handler.js` - SAPUI5 betoltesi hiba kezelo (180s timeout + script error overlay)
 
 ### UI5 Komponensek
 - `Component.js` - UI5 Component
@@ -160,10 +164,10 @@ Minden mukodesi es fejlesztesi dokumentum a [`hopper/`](hopper/) mappaban talalh
 
 - **Video attributumok**: autoplay, loop, muted, playsinline
 - **5x lassitas**: playbackRate = 0.2
-- **2 perc idotartam**: 120 000 ms
-- **Automatikus elrejtes**: A splash screen automatikusan eltunik, amikor az UI5 betoltodik
+- **Manualis vezerles**: `window.SplashScreen.show()` / `.hide()` / `.isVisible()`
+- **60 mp biztonsagi fallback**: Ha az app nem hivja `hide()`-ot, a splash automatikusan eltunik es error overlay jelenik meg
 - **Smooth atmenet**: 1 masodperces fade-out animacio
-- **Responsive**: 80% szelesseg/magassag, kozepre igazitva
+- **Responsive**: 100% szelesseg/magassag, kozepre igazitva, object-fit: cover
 
 ## Kornyezeti Konfiguraciok
 
@@ -240,8 +244,9 @@ npm run start:hybrid
    - **CDN**: `fiori-tools-proxy` atiranyit a `sapui5.hana.ondemand.com`-ra
    - **Backend**: CDN proxy + `/sap` backend proxy
    - **Hybrid**: lokalis framework + `/sap` backend proxy
-4. A `ui5-error-handler.js` figyeli a betoltest: ha 15 masodpercen belul nem toltodik be a SAPUI5, error overlay jelenik meg
-5. A `splash-screen.js` kezeli a splash video lejatszast es a fade-out-ot
+4. A `ui5-error-handler.js` figyeli a betoltest: ha 180 masodpercen belul nem toltodik be a SAPUI5, error overlay jelenik meg
+5. A `splash-screen.js` kezeli a splash video lejatszast es a manualis vezerles API-t (`show`/`hide`/`isVisible`)
+6. Ha az app nem hivja meg `SplashScreen.hide()`-ot 60 mp-en belul, a splash fallback timeout aktivalodia es error overlay jelenik meg
 
 ### devDependencies
 
@@ -252,12 +257,20 @@ npm run start:hybrid
 
 ## Testreszabas
 
-### Splash Screen Idotartam
+### Fallback Timeout
 
 Az `splash-screen.js` fajlban:
 
 ```javascript
-}, 120000); // <- Valtoztasd ezt (ms)
+var FALLBACK_TIMEOUT_MS = 60000; // <- 60 masodperc (valtoztasd igenyek szerint)
+```
+
+### UI5 Load Timeout
+
+Az `ui5-error-handler.js` fajlban:
+
+```javascript
+var LOAD_TIMEOUT_MS = 180000; // <- 3 perc (valtoztasd igenyek szerint)
 ```
 
 ### Video Sebesseg
@@ -272,8 +285,9 @@ CSS modositas a `splash-screen.css` fajlban:
 
 ```css
 #splash-video {
-    width: 80%;  /* <- Valtoztasd */
-    height: 80%; /* <- Valtoztasd */
+    width: 100%;  /* <- Valtoztasd */
+    height: 100%; /* <- Valtoztasd */
+    object-fit: cover;
 }
 ```
 
@@ -309,12 +323,20 @@ server:
 
 ### Error Overlay jelenik meg
 
-Az error overlay (`ui5-error-handler.js`) ket esetben jelenik meg:
-1. **Timeout** (15 mp): a SAPUI5 nem toltodott be idoben
-2. **Script error**: a `sap-ui-core.js` halozati hiba vagy nem elerheto
+Az error overlay **ket forrasbol** jelenhet meg:
 
-Megoldas:
-- Ellenorizd a futó `fiori run` szervert
+**1. UI5 betoltesi hiba** (`ui5-error-handler.js`):
+- **Timeout** (180 mp): a SAPUI5 framework nem toltodott be idoben
+- **Script error**: a `sap-ui-core.js` halozati hiba vagy nem elerheto
+- Megoldas: Ellenorizd a CDN/szerver elerhetoseget
+
+**2. Backend/alkalmazas hiba** (`splash-screen.js` fallback):
+- **Fallback timeout** (60 mp): az app nem hivta meg `SplashScreen.hide()`-ot
+- Valoszinuleg a backend szerver nem elerheto
+- Megoldas: Ellenorizd a backend szerver statuszat es a proxy konfiguraciot
+
+Altalanos megoldas:
+- Ellenorizd a futo `fiori run` szervert
 - Ellenorizd a YAML konfiguraciot (helyes URL-ek)
 - Probalj mas modot (pl. `npm run start:cdn` helyett `npm start`)
 

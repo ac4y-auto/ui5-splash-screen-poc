@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI5 Splash Screen - Configurable Example</title>
+
+    <!-- Splash screen styles -->
+    <link rel="stylesheet" href="splash-screen.css">
+
+    <!-- ✅ OPTIONAL: Custom Configuration (before scripts) -->
+    <script>
+        // Splash Configuration
+        window.SplashConfig = {
+            videoPlaybackRate: 0.2,       // 5x slower video
+            hideDelay: 500,               // 500ms delay before fade-out
+            fadeOutDuration: 1000,        // 1s fade-out animation
+            removeAfterHide: true,        // Remove from DOM after hide
+            autoPlay: true,               // Auto-play video on show
+            debug: true                   // Enable console logging
+        };
+
+        // Error Handler Configuration
+        window.UI5ErrorConfig = {
+            loadTimeoutMs: 15000,         // 15s timeout
+            messages: {
+                title: 'UI5 Loading Error',
+                timeout: 'SAPUI5 library did not load within expected time',
+                networkError: 'SAPUI5 library failed to load (network error)',
+                reloadButton: '🔄 Reload Page',
+                technicalDetails: 'Technical Details (click to expand)',
+                suggestions: 'Possible Solutions:',
+                suggestionList: [
+                    'Check your internet connection',
+                    'Verify the development server is running',
+                    'Check the console for additional errors (F12)'
+                ]
+            },
+            debug: true
+        };
+    </script>
+
+    <!-- SAPUI5 Bootstrap (served by fiori-tools-proxy) -->
+    <script id="sap-ui-bootstrap"
+        src="resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
+        data-sap-ui-libs="sap.m"
+        data-sap-ui-compatVersion="edge"
+        data-sap-ui-async="true"
+        data-sap-ui-onInit="module:sap/ui/core/ComponentSupport"
+        data-sap-ui-resourceroots='{"myapp": "./"}'>
+    </script>
+
+    <!-- UI5 load error handler (CONFIGURABLE VERSION) -->
+    <script src="ui5-error-handler-configurable.js"></script>
+
+    <!-- Splash screen logic (CONFIGURABLE VERSION) -->
+    <script src="splash-screen-configurable.js"></script>
+</head>
+<body class="sapUiBody loading">
+    <!-- Splash Screen Container -->
+    <div id="splash-screen">
+        <video autoplay muted loop playsinline poster="splash-poster.jpeg">
+            <source src="splash-video.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- UI5 Application Container -->
+    <div
+        data-sap-ui-component
+        data-name="myapp"
+        data-id="container"
+        data-settings='{"id" : "ui5SplashPoc"}'
+        data-handle-validation="true">
+    </div>
+</body>
+</html>

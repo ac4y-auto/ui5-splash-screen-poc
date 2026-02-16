@@ -1,11 +1,24 @@
 /**
  * Splash Screen Controller (WMS Integration)
- * @description Manages splash screen lifecycle: video playback, UI5 init detection, fade-out
- * @version 1.0.0
+ * @description Manages splash screen lifecycle for WMS project
+ * @version 2.0.0
  *
- * Global API:
- *   window.SplashScreen.hide(delay)  - Hide splash with optional delay (ms), default 500
- *   window.SplashScreen.show()       - Re-show splash (if still in DOM)
+ * MANUAL CONTROL MODE - Az UI5 alkalmazás irányítja a splash lifecycle-t:
+ *   window.SplashScreen.show()       - Splash megjelenítése
+ *   window.SplashScreen.hide(delay)  - Splash elrejtése (default delay: 500ms)
+ *   window.SplashScreen.isVisible()  - Láthatóság lekérdezése
+ *
+ * Használat Component.ts-ben:
+ *   init() {
+ *       if ((window as any).SplashScreen) {
+ *           (window as any).SplashScreen.show();
+ *       }
+ *       this.initCompany().then(() => {
+ *           if ((window as any).SplashScreen) {
+ *               (window as any).SplashScreen.hide();
+ *           }
+ *       });
+ *   }
  */
 
 (function() {
@@ -30,7 +43,7 @@
      * @param {number} [delay=500] - Delay in ms before starting fade-out
      */
     function hideSplashScreen(delay) {
-        delay = delay || 500;
+        delay = delay !== undefined ? delay : 500;
 
         setTimeout(function() {
             // Remove loading class from body
@@ -51,51 +64,121 @@
     }
 
     /**
-     * Detect UI5 Core initialization via polling
-     * Falls back to timeout if UI5 never loads
+     * MANUAL CONTROL MODE
+     *
+     * Splash screen NEM rejtődik el automatikusan!
+     * Az UI5 alkalmazás (Component.ts) irányítja a show/hide-ot.
+     *
+     * BIZTONSÁGI FALLBACK: Ha az app nem hívja meg a hide()-ot
+     * (pl. backend timeout, elakadt Promise), a splash 60 mp után
+     * automatikusan eltűnik.
      */
-    if (typeof sap !== 'undefined') {
-        console.log('[Splash] UI5 already loaded, hiding splash...');
-        hideSplashScreen();
-    } else {
-        console.log('[Splash] Waiting for UI5 Core to initialize...');
+    console.log('[Splash] Manual control mode - waiting for app to call show()/hide()');
 
-        var checkUI5Interval = setInterval(function() {
-            if (typeof sap !== 'undefined' && sap.ui && sap.ui.getCore) {
-                clearInterval(checkUI5Interval);
-                console.log('[Splash] UI5 Core detected, attaching init handler...');
+    var FALLBACK_TIMEOUT_MS = 60000; // 60 másodperc
+    var fallbackTimer = setTimeout(function() {
+        if (document.getElementById('splash-screen')) {
+            console.warn('[Splash] Fallback timeout (' + (FALLBACK_TIMEOUT_MS / 1000) + 's) - forcing splash screen hide');
+            hideSplashScreen(0);
+            showFallbackErrorOverlay();
+        }
+    }, FALLBACK_TIMEOUT_MS);
 
-                sap.ui.getCore().attachInit(function() {
-                    console.log('[Splash] UI5 Core initialized successfully');
-                    // Alapértelmezés: UI5 init-kor elrejtjük
-                    // Ha a Component.ts kezeli, kommentezd ki az alábbi sort:
-                    hideSplashScreen();
-                });
-            }
-        }, 100);
+    /**
+     * Show error overlay when fallback timeout fires
+     * Ugyanazt a stílust használja, mint az ui5-error-handler.js
+     */
+    function showFallbackErrorOverlay() {
+        // Ne jelenjen meg, ha már van error overlay (pl. ui5-error-handler már megjelenítette)
+        if (document.getElementById('ui5-load-error-overlay')) return;
 
-        // Fallback: hide after 10 seconds no matter what
+        var overlay = document.createElement('div');
+        overlay.id = 'ui5-load-error-overlay';
+        overlay.className = 'error-overlay';
+
+        overlay.innerHTML =
+            '<div class="error-content">' +
+                '<div class="error-icon">⚠️</div>' +
+                '<h2>Alkalmazás Betöltési Hiba</h2>' +
+                '<p>Az alkalmazás nem töltődött be az elvárt időn belül (' + (FALLBACK_TIMEOUT_MS / 1000) + ' mp).<br>' +
+                'Valószínűleg a backend szerver nem elérhető.</p>' +
+                '<div class="error-actions">' +
+                    '<button class="btn-primary" onclick="location.reload()">' +
+                        '🔄 Oldal újratöltése' +
+                    '</button>' +
+                '</div>' +
+                '<div class="error-suggestions">' +
+                    '<h3>Lehetséges megoldások:</h3>' +
+                    '<ul>' +
+                        '<li>Ellenőrizd, hogy a backend szerver fut-e</li>' +
+                        '<li>Ellenőrizd a hálózati kapcsolatot</li>' +
+                        '<li>Nézd meg a konzolt további hibákért (F12)</li>' +
+                    '</ul>' +
+                '</div>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        // Fade in animation
         setTimeout(function() {
-            clearInterval(checkUI5Interval);
-            if (document.getElementById('splash-screen')) {
-                console.warn('[Splash] UI5 init timeout (10s), forcing splash screen hide');
-                hideSplashScreen(0);
-            }
-        }, 10000);
+            overlay.classList.add('show');
+        }, 10);
+
+        console.log('[Splash] Fallback error overlay displayed');
     }
 
     /**
-     * Global SplashScreen API
+     * Public API for UI5 App Control
      */
     window.SplashScreen = {
-        hide: hideSplashScreen,
+        /**
+         * Show splash screen
+         * Hívd meg az app init-kor, mielőtt az adatok betöltődnek
+         */
         show: function() {
             var splash = document.getElementById('splash-screen');
             if (splash) {
+                // Remove fade-out class if present
                 splash.classList.remove('fade-out');
-                document.body.classList.add('loading');
-                console.log('[Splash] Splash screen shown');
+                splash.classList.remove('hidden');
+
+                // Make visible
+                splash.style.display = 'flex';
+                splash.style.opacity = '1';
+
+                // Start video playback
+                var video = splash.querySelector('video');
+                if (video) {
+                    video.play();
+                }
+
+                console.log('[Splash] Splash screen SHOWN (app initiated)');
+            } else {
+                console.warn('[Splash] Splash screen element not found in DOM');
             }
+        },
+
+        /**
+         * Hide splash screen
+         * Hívd meg amikor az app készen áll (adatok betöltve)
+         * @param {number} delay - Optional delay in ms (default 500ms)
+         */
+        hide: function(delay) {
+            console.log('[Splash] Hide requested by app');
+            clearTimeout(fallbackTimer);
+            hideSplashScreen(delay);
+        },
+
+        /**
+         * Check if splash is currently visible
+         * @returns {boolean}
+         */
+        isVisible: function() {
+            var splash = document.getElementById('splash-screen');
+            if (!splash) return false;
+
+            var style = window.getComputedStyle(splash);
+            return style.display !== 'none' && style.opacity !== '0';
         }
     };
 

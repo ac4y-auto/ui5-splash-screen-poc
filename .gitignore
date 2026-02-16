@@ -8,6 +8,9 @@ package-lock.json
 # IDE
 .vscode/
 .idea/
+
+# Claude Code worktrees
+.claude/worktrees/
 *.swp
 *.swo
 

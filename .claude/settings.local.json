@@ -54,13 +54,7 @@
       "Bash(start chrome --incognito \"http://localhost:8300/\")",
       "Bash(cmd //c \"start chrome --incognito http://localhost:8300/\")",
       "Bash(pkill:*)",
-      "Bash(git tag:*)",
-      "Bash(node:*)",
-      "Bash(npm run purge:*)",
-      "Bash(tasklist:*)",
-      "Bash(npm run smart-start:backend:*)",
-      "Bash(npx fiori run:*)",
-      "Bash(ping:*)"
+      "Bash(git tag:*)"
     ]
   }
 }

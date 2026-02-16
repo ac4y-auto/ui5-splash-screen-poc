@@ -134,19 +134,9 @@ export default class Component extends BaseComponent {
         this.getDeviceSettings();
 
         this.initCompany().then( oUser => {
-            // ✅ Splash screen elrejtése az inicializáció végén
-            if ((window as any).SplashScreen) {
-                (window as any).SplashScreen.hide();
-            }
-
             this.getRouter().initialize();
 
         }).catch((err: any) => {
-            // ✅ Hiba esetén is rejtsd el a splash screen-t
-            if ((window as any).SplashScreen) {
-                (window as any).SplashScreen.hide(0);
-            }
-
             MessageBox.error(err.message);
         });
     }
