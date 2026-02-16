@@ -44,8 +44,8 @@
 	</script>
     <script src="./utils/print.min.js"></script>
     <script id="sap-ui-bootstrap"
-        src="resources/sap-ui-core.js"
-        data-sap-ui-theme="sap_fiori_3"
+        src="https://ui5.sap.com/1.116.0/resources/sap-ui-core.js"
+        data-sap-ui-theme="sap_horizon"
         data-sap-ui-xx-bindingSyntax="complex"
         data-sap-ui-resourceroots='{
             "ntt.wms": "./"
@@ -54,6 +54,12 @@
         data-sap-ui-async="true"
         data-sap-ui-logLevel = "debug"
         data-sap-ui-frameOptions="trusted"></script>
+
+    <!-- ============================================ -->
+    <!-- SPLASH SCREEN: UI5 betöltési hibakezelő      -->
+    <!-- ============================================ -->
+    <script src="css/ui5-error-handler.js"></script>
+
     <script id="locate-reuse-libs"
         src="./utils/locate-reuse-libs.js"
         data-sap-ui-manifest-uri="./manifest.json"
@@ -61,12 +67,12 @@
 </head>
 
 <!-- ====================================================== -->
-<!-- SPLASH SCREEN: 2/3 - "loading" class hozzáadva a body-hoz -->
+<!-- SPLASH SCREEN: 2/3 - "loading" class hozzáadva         -->
 <!-- ====================================================== -->
 <body class="sapUiBody sapUiSizeCompact loading" id="content">
 
     <!-- ============================================ -->
-    <!-- SPLASH SCREEN: 2/3 - HTML struktúra           -->
+    <!-- SPLASH SCREEN: 2/3 - HTML struktúra          -->
     <!-- ============================================ -->
     <div id="splash-screen">
         <video id="splash-video" autoplay loop muted playsinline

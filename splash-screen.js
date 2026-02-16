@@ -77,6 +77,63 @@
     console.log('[Splash] Manual control mode - waiting for app to call show()');
 
     /**
+     * BIZTONSÁGI FALLBACK: Ha az app nem hívja meg a hide()-ot
+     * (pl. backend timeout, elakadt Promise), a splash 60 mp után
+     * automatikusan eltűnik.
+     */
+    var FALLBACK_TIMEOUT_MS = 60000; // 60 másodperc
+    var fallbackTimer = setTimeout(function() {
+        if (document.getElementById('splash-screen')) {
+            console.warn('[Splash] Fallback timeout (' + (FALLBACK_TIMEOUT_MS / 1000) + 's) - forcing splash screen hide');
+            hideSplashScreen(0);
+            showFallbackErrorOverlay();
+        }
+    }, FALLBACK_TIMEOUT_MS);
+
+    /**
+     * Show error overlay when fallback timeout fires
+     * Ugyanazt a stílust használja, mint az ui5-error-handler.js
+     */
+    function showFallbackErrorOverlay() {
+        // Ne jelenjen meg, ha már van error overlay (pl. ui5-error-handler már megjelenítette)
+        if (document.getElementById('ui5-load-error-overlay')) return;
+
+        var overlay = document.createElement('div');
+        overlay.id = 'ui5-load-error-overlay';
+        overlay.className = 'error-overlay';
+
+        overlay.innerHTML =
+            '<div class="error-content">' +
+                '<div class="error-icon">⚠️</div>' +
+                '<h2>Alkalmazás Betöltési Hiba</h2>' +
+                '<p>Az alkalmazás nem töltődött be az elvárt időn belül (' + (FALLBACK_TIMEOUT_MS / 1000) + ' mp).<br>' +
+                'Valószínűleg a backend szerver nem elérhető.</p>' +
+                '<div class="error-actions">' +
+                    '<button class="btn-primary" onclick="location.reload()">' +
+                        '🔄 Oldal újratöltése' +
+                    '</button>' +
+                '</div>' +
+                '<div class="error-suggestions">' +
+                    '<h3>Lehetséges megoldások:</h3>' +
+                    '<ul>' +
+                        '<li>Ellenőrizd, hogy a backend szerver fut-e</li>' +
+                        '<li>Ellenőrizd a hálózati kapcsolatot</li>' +
+                        '<li>Nézd meg a konzolt további hibákért (F12)</li>' +
+                    '</ul>' +
+                '</div>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        // Fade in animation
+        setTimeout(function() {
+            overlay.classList.add('show');
+        }, 10);
+
+        console.log('[Splash] Fallback error overlay displayed');
+    }
+
+    /**
      * Public API for UI5 App Control
      *
      * Az UI5 alkalmazás ezekkel a metódusokkal irányítja a splash screen-t
@@ -116,6 +173,7 @@
          */
         hide: function(delay) {
             console.log('[Splash] Hide requested by app');
+            clearTimeout(fallbackTimer);
             hideSplashScreen(delay);
         },
 

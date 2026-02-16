@@ -1,0 +1,22 @@
+--- /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc/wms-integration/original/Component.ts	2026-02-16 13:20:11.666800469 +0100
++++ /Volumes/DevAPFS/work/ui5/ui5-splash-screen-poc/wms-integration/Component.ts	2026-02-16 13:20:09.854847574 +0100
+@@ -134,9 +134,19 @@
+         this.getDeviceSettings();
+ 
+         this.initCompany().then( oUser => {
++            // ✅ Splash screen elrejtése az inicializáció végén
++            if ((window as any).SplashScreen) {
++                (window as any).SplashScreen.hide();
++            }
++
+             this.getRouter().initialize();
+ 
+         }).catch((err: any) => {
++            // ✅ Hiba esetén is rejtsd el a splash screen-t
++            if ((window as any).SplashScreen) {
++                (window as any).SplashScreen.hide(0);
++            }
++
+             MessageBox.error(err.message);
+         });
+     }
