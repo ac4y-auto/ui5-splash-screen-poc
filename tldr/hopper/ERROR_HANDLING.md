@@ -5,7 +5,7 @@ UI5 betöltési hiba → splash eltűnik → error overlay megjelenik (retry gom
 
 ## Két detekciós mechanizmus (ui5-error-handler.js)
 1. **Script error event** — azonnali (404, hálózati hiba)
-2. **15s timeout** — ha `typeof sap === 'undefined'` 15 mp után
+2. **180s timeout** — ha `typeof sap === 'undefined'` 180 mp után ✅ v4.1.0
 
 ## Sikeres betöltés
 - `bootstrapScript.load` event → `clearTimeout` → nincs overlay
@@ -31,7 +31,14 @@ open http://localhost:8300/test-error-overlay.html
 # → splash → ~1s → error overlay megjelenik
 ```
 
-## v3.2 → v4.0 változás
+## Változások
+
+### v3.2 → v4.0
 - `ui5-bootstrap.js` → `ui5-error-handler.js`
 - Timeout hozzáadva (15s) a script error mellé
 - Nincs config gomb (YAML-ból jön a konfig)
+
+### v4.0 → v4.1.0 ✅
+- Timeout: 15s → 180s (3 perc)
+- Lassabb backend-ek támogatása
+- Konfigurálható verzió: `window.UI5ErrorConfig.loadTimeoutMs`
